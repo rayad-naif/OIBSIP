@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IR Solutions | Premium App Development</title>
+    
+    <!-- Import Google Fonts: Playfair Display for elegant headings/logo, Inter for clean body text -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Playfair+Display:ital,wght@0,600;0,800;1,400;1,600&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome for standard UI icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            /* Premium Color Palette */
+            --maroon-dark: #2b0000;
+            --maroon: #5c0000;
+            --maroon-light: #8a0505;
+            
+            --gold: #d4af37;
+            --gold-light: #f9d05f;
+            --gold-dark: #997a00;
+            --gold-gradient: linear-gradient(135deg, #f9d05f 0%, #d4af37 50%, #997a00 100%);
+            
+            --black-bg: #050505;
+            --black-surface: #121212;
+            --black-card: #1a1a1a;
+            
+            --text-main: #ffffff;
+            --text-muted: #a0a0a0;
+            
+            /* Spacing & Layout */
+            --section-pad: 6rem 2rem;
+            --max-width: 1200px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--black-bg);
+            color: var(--text-main);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        h1, h2, h3, h4 {
+            font-family: 'Playfair Display', serif;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        a {
+            text-decoration: none;
+            color: inherit;
+            transition: all 0.3s ease;
+        }
+
+        ul {
+            list-style: none;
+        }
+
+        /* Reusable Components */
+        .container {
+            max-width: var(--max-width);
+            margin: 0 auto;
+        }
+
+        .gold-text {
+            background: var(--gold-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: var(--gold-gradient);
+            color: var(--black-bg);
+            padding: 1rem 2.5rem;
+            font-weight: 600;
+            font-size: 1.1rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            display: inline-block;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(212, 175, 55, 0.3);
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 4rem;
+        }
+
+        .section-header h2 {
+            font-size: 3rem;
+            color: var(--text-main);
+        }
+
+        .section-header p {
+            color: var(--gold);
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .header {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: rgba(5, 5, 5, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+            z-index: 1000;
+            transition: all 0.3s ease;
+        }
+
+        .nav-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 2rem;
+            max-width: var(--max-width);
+            margin: 0 auto;
+        }
+
+        /* Custom Typographic Logo Mark */
+        .brand-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .custom-ir-icon {
+            display: flex;
+            align-items: baseline;
+            color: var(--gold);
+            font-family: 'Playfair Display', serif;
+            line-height: 1;
+        }
+
+        .icon-i {
+            font-size: 2.6rem; /* Tall 'i' */
+            font-style: italic;
+            font-weight: 400;
+            transform: scaleY(1.1) translateY(2px); /* Stretch slightly and align */
+            margin-right: -2px; /* Pull the R closer */
+        }
+
+        .icon-r {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: var(--text-main);
+        }
+
+        .logo-text {
+            font-size: 1.2rem;
+            font-weight: 300;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            border-left: 1px solid var(--maroon-light);
+            padding-left: 10px;
+            margin-left: 5px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2.5rem;
+        }
+
+        .nav-links a {
+            font-size: 0.95rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            position: relative;
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: -5px;
+            left: 0;
+            background: var(--gold-gradient);
+            transition: width 0.3s ease;
+        }
+
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        .mobile-menu-btn {
+            display: none;
+            color: var(--gold);
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        .hero {
+            padding: 12rem 2rem 8rem;
+            background: radial-gradient(circle at center, var(--maroon-dark) 0%, var(--black-bg) 70%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Subtle background accent */
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -20%;
+            right: -10%;
+            width: 50vw;
+            height: 50vw;
+            background: radial-gradient(circle, rgba(212,175,55,0.05) 0%, transparent 60%);
+            z-index: 0;
+        }
+
+        .hero-content {
+            max-width: 800px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero h1 {
+            font-size: 4.5rem;
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            color: var(--text-muted);
+            margin-bottom: 3rem;
+            max-width: 600px;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 1.5rem;
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: var(--gold);
+            border: 2px solid var(--gold);
+            padding: 1rem 2.5rem;
+            font-weight: 600;
+            font-size: 1.1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-outline:hover {
+            background: rgba(212, 175, 55, 0.1);
+        }
+
+        .services {
+            padding: var(--section-pad);
+            background-color: var(--black-surface);
+            border-top: 1px solid rgba(92, 0, 0, 0.5); /* Maroon subtle border */
+        }
+
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 2.5rem;
+        }
+
+        .service-card {
+            background: var(--black-card);
+            padding: 3rem 2rem;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.4s ease, border-color 0.4s ease;
+        }
+
+        /* Card Hover Effects */
+        .service-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: var(--gold-gradient);
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.4s ease;
+        }
+
+        .service-card:hover {
+            transform: translateY(-10px);
+            border-color: rgba(212, 175, 55, 0.3);
+            background: linear-gradient(to bottom, var(--black-card), var(--maroon-dark));
+        }
+
+        .service-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .service-icon {
+            font-size: 3rem;
+            color: var(--gold);
+            margin-bottom: 1.5rem;
+        }
+
+        .service-card h3 {
+            font-size: 1.8rem;
+            margin-bottom: 1rem;
+        }
+
+        .service-card p {
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+
+        .tech-stack {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .tech-badge {
+            background: rgba(92, 0, 0, 0.4); /* Maroon tint */
+            color: var(--gold-light);
+            padding: 0.3rem 0.8rem;
+            font-size: 0.8rem;
+            border-radius: 20px;
+            border: 1px solid rgba(212, 175, 55, 0.2);
+        }
+
+        .stats {
+            padding: 5rem 2rem;
+            background: linear-gradient(rgba(5, 5, 5, 0.9), rgba(5, 5, 5, 0.9)), url('https://images.unsplash.com/photo-1550751827-4bd374c3f58b?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80') center/cover fixed;
+            border-top: 1px solid var(--gold-dark);
+            border-bottom: 1px solid var(--gold-dark);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 3rem;
+            text-align: center;
+        }
+
+        .stat-item h3 {
+            font-size: 3.5rem;
+            color: var(--gold);
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-item p {
+            font-size: 1.1rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--text-main);
+        }
+
+        .contact {
+            padding: var(--section-pad);
+            background-color: var(--black-bg);
+        }
+
+        .contact-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            align-items: center;
+        }
+
+        .contact-info h3 {
+            font-size: 2.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .contact-info p {
+            color: var(--text-muted);
+            margin-bottom: 2rem;
+            font-size: 1.1rem;
+        }
+
+        .contact-details {
+            margin-top: 3rem;
+        }
+
+        .contact-method {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .contact-method i {
+            font-size: 1.5rem;
+            color: var(--gold);
+            width: 50px;
+            height: 50px;
+            background: rgba(212, 175, 55, 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .contact-form {
+            background: var(--maroon-dark);
+            padding: 3rem;
+            border-radius: 8px;
+            border: 1px solid rgba(212, 175, 55, 0.2);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-control {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 1rem;
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--gold);
+            background: rgba(0, 0, 0, 0.6);
+        }
+
+        textarea.form-control {
+            resize: vertical;
+            min-height: 150px;
+        }
+
+        .contact-form .btn-primary {
+            width: 100%;
+            margin-top: 1rem;
+        }
+
+        .footer {
+            background-color: var(--black-surface);
+            padding: 4rem 2rem 2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .footer-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 3rem;
+            margin-bottom: 3rem;
+        }
+
+        .footer-brand p {
+            color: var(--text-muted);
+            margin-top: 1.5rem;
+            max-width: 300px;
+        }
+
+        .footer-title {
+            font-size: 1.2rem;
+            color: var(--gold);
+            margin-bottom: 1.5rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .footer-links li {
+            margin-bottom: 0.8rem;
+        }
+
+        .footer-links a:hover {
+            color: var(--gold);
+            padding-left: 5px;
+        }
+
+        .footer-social {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .footer-social a {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.05);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-main);
+        }
+
+        .footer-social a:hover {
+            background: var(--gold);
+            color: var(--black-bg);
+        }
+
+        .footer-bottom {
+            text-align: center;
+            padding-top: 2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 992px) {
+            .hero h1 { font-size: 3.5rem; }
+            .contact-container { grid-template-columns: 1fr; gap: 3rem; }
+            .footer-grid { grid-template-columns: 1fr 1fr; }
+        }
+
+        @media (max-width: 768px) {
+            .nav-links, .nav-btn { display: none; }
+            .mobile-menu-btn { display: block; }
+            
+            .hero { padding-top: 8rem; }
+            .hero h1 { font-size: 2.8rem; }
+            .hero-buttons { flex-direction: column; }
+            
+            .footer-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <header class="header">
+        <div class="nav-container">
+            <a href="#" class="brand-logo">
+                <!-- Custom Stylized Icon for IR -->
+                <span class="custom-ir-icon">
+                    <span class="icon-i">i</span>
+                    <span class="icon-r">R</span>
+                </span>
+                <span class="logo-text">Solutions</span>
+            </a>
+            
+            <nav>
+                <ul class="nav-links">
+                    <li><a href="#home">Home</a></li>
+                    <li><a href="#services">Services</a></li>
+                    <li><a href="#stats">Impact</a></li>
+                    <li><a href="#contact">Contact</a></li>
+                </ul>
+            </nav>
+            
+            <a href="#contact" class="btn-primary nav-btn">Let's Talk</a>
+            <i class="fa-solid fa-bars mobile-menu-btn"></i>
+        </div>
+    </header>
+
+    <main>
+        <section id="home" class="hero">
+            <div class="container hero-content">
+                <h1>Elevate Your Digital <span class="gold-text">Presence</span></h1>
+                <p>IR Solutions delivers world-class software engineering. We architect and build premium applications tailored to scale your enterprise.</p>
+                <div class="hero-buttons">
+                    <a href="#services" class="btn-primary">Explore Services</a>
+                    <a href="#contact" class="btn-outline">Request Consultation</a>
+                </div>
+            </div>
+        </section>
+
+        <section id="services" class="services">
+            <div class="container">
+                <div class="section-header">
+                    <p>Our Core Expertise</p>
+                    <h2>App Development Ecosystem</h2>
+                </div>
+                
+                <div class="services-grid">
+                    <!-- Service 1: iOS -->
+                    <div class="service-card">
+                        <i class="fa-brands fa-apple service-icon"></i>
+                        <h3>Native iOS</h3>
+                        <p>Bespoke iPhone and iPad applications engineered for the Apple ecosystem. We deliver fluid animations, uncompromising security, and strict adherence to Human Interface Guidelines.</p>
+                        <div class="tech-stack">
+                            <span class="tech-badge">Swift</span>
+                            <span class="tech-badge">Objective-C</span>
+                            <span class="tech-badge">CoreData</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Service 2: Android -->
+                    <div class="service-card">
+                        <i class="fa-brands fa-android service-icon"></i>
+                        <h3>Native Android</h3>
+                        <p>Robust and scalable applications built for the world's most popular mobile OS. Optimized for thousands of devices with deep hardware integration and Material Design.</p>
+                        <div class="tech-stack">
+                            <span class="tech-badge">Kotlin</span>
+                            <span class="tech-badge">Java</span>
+                            <span class="tech-badge">Jetpack Compose</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Service 3: Cross-Platform -->
+                    <div class="service-card">
+                        <i class="fa-solid fa-layer-group service-icon"></i>
+                        <h3>Cross-Platform</h3>
+                        <p>Maximize your reach with a single, unified codebase. We build high-performance hybrid applications that feel native on both iOS and Android, reducing time-to-market.</p>
+                        <div class="tech-stack">
+                            <span class="tech-badge">Flutter</span>
+                            <span class="tech-badge">React Native</span>
+                            <span class="tech-badge">Dart</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="stats" class="stats">
+            <div class="container stats-grid">
+                <div class="stat-item">
+                    <h3>150+</h3>
+                    <p>Apps Delivered</p>
+                </div>
+                <div class="stat-item">
+                    <h3>4.9</h3>
+                    <p>App Store Average</p>
+                </div>
+                <div class="stat-item">
+                    <h3>50+</h3>
+                    <p>Enterprise Clients</p>
+                </div>
+                <div class="stat-item">
+                    <h3>100%</h3>
+                    <p>Code Quality</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="contact" class="contact">
+            <div class="container contact-container">
+                <div class="contact-info">
+                    <div class="section-header" style="text-align: left; margin-bottom: 2rem;">
+                        <p>Get In Touch</p>
+                        <h2>Start Your Next Project</h2>
+                    </div>
+                    <p>Partner with IR Solutions to transform your vision into a digital reality. Our experts are ready to discuss your specific technical requirements.</p>
+                    
+                    <div class="contact-details">
+                        <div class="contact-method">
+                            <i class="fa-solid fa-location-dot"></i>
+                            <div>
+                                <h4>Global Headquarters</h4>
+                                <span>123 Golden Avenue, Tech District</span>
+                            </div>
+                        </div>
+                        <div class="contact-method">
+                            <i class="fa-solid fa-envelope"></i>
+                            <div>
+                                <h4>Email Us</h4>
+                                <span>enterprise@irsolutions.com</span>
+                            </div>
+                        </div>
+                        <div class="contact-method">
+                            <i class="fa-solid fa-phone"></i>
+                            <div>
+                                <h4>Call Direct</h4>
+                                <span>+1 (555) 019-8273</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <form class="contact-form" onsubmit="event.preventDefault();">
+                    <div class="form-group">
+                        <input type="text" class="form-control" placeholder="Full Name" required>
+                    </div>
+                    <div class="form-group">
+                        <input type="email" class="form-control" placeholder="Corporate Email" required>
+                    </div>
+                    <div class="form-group">
+                        <input type="text" class="form-control" placeholder="Subject / Project Type" required>
+                    </div>
+                    <div class="form-group">
+                        <textarea class="form-control" placeholder="Tell us about your project requirements..." required></textarea>
+                    </div>
+                    <button type="submit" class="btn-primary">Send Message <i class="fa-solid fa-arrow-right" style="margin-left: 8px;"></i></button>
+                </form>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-brand">
+                    <a href="#" class="brand-logo" style="margin-bottom: 1rem;">
+                        <span class="custom-ir-icon">
+                            <span class="icon-i">i</span>
+                            <span class="icon-r">R</span>
+                        </span>
+                        <span class="logo-text">Solutions</span>
+                    </a>
+                    <p>Engineering premium digital experiences for the world's most ambitious brands.</p>
+                </div>
+                
+                <div>
+                    <h4 class="footer-title">Services</h4>
+                    <ul class="footer-links">
+                        <li><a href="#">Native iOS</a></li>
+                        <li><a href="#">Native Android</a></li>
+                        <li><a href="#">Cross-Platform</a></li>
+                        <li><a href="#">UI/UX Design</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h4 class="footer-title">Company</h4>
+                    <ul class="footer-links">
+                        <li><a href="#">About Us</a></li>
+                        <li><a href="#">Case Studies</a></li>
+                        <li><a href="#">Careers</a></li>
+                        <li><a href="#">Privacy Policy</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h4 class="footer-title">Follow Us</h4>
+                    <div class="footer-social">
+                        <a href="#"><i class="fa-brands fa-linkedin-in"></i></a>
+                        <a href="#"><i class="fa-brands fa-twitter"></i></a>
+                        <a href="#"><i class="fa-brands fa-dribbble"></i></a>
+                        <a href="#"><i class="fa-brands fa-github"></i></a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <p>&copy; 2026 IR Solutions. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+</body>
+</html>
