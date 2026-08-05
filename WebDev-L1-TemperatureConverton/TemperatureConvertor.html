@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Temperature Converter</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-main: #0f172a;
+            --bg-card: #1e293b;
+            --accent: #38bdf8;
+            --accent-hover: #0284c7;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+            --error: #ef4444;
+            --error-bg: rgba(239, 68, 68, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .converter-card {
+            background: var(--bg-card);
+            width: 100%;
+            max-width: 480px; /* Slightly wider to accommodate text comfortably */
+            padding: 2.5rem;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .header h1 {
+            font-size: 1.75rem;
+            color: var(--text-main);
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        .input-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 0.9rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: var(--text-muted);
+        }
+
+        /* Fixed overflowing selector using Grid */
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 145px; /* Gives the dropdown a fixed, safe width */
+            gap: 10px;
+        }
+
+        input[type="number"], select {
+            padding: 0.75rem 1rem;
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.3s;
+            width: 100%;
+        }
+
+        input[type="number"]:focus, select:focus {
+            border-color: var(--accent);
+        }
+
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
+
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        select {
+            cursor: pointer;
+            appearance: none;
+            /* Custom dropdown arrow colored for dark theme */
+            background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%2394a3b8%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.7rem top 50%;
+            background-size: 0.65rem auto;
+            padding-right: 2rem;
+        }
+        
+        select option {
+            background-color: var(--bg-card);
+            color: var(--text-main);
+        }
+
+        .btn-convert {
+            width: 100%;
+            padding: 0.875rem;
+            background-color: transparent;
+            color: var(--accent);
+            border: 2px solid var(--accent);
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 1.5rem;
+        }
+
+        .btn-convert:hover {
+            background-color: var(--accent);
+            color: #0f172a;
+        }
+
+        .error-message {
+            display: none;
+            background-color: var(--error-bg);
+            color: var(--error);
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            text-align: center;
+        }
+
+        .results {
+            display: none;
+            flex-direction: column;
+            gap: 10px;
+            border-top: 1px solid var(--border);
+            padding-top: 1.5rem;
+        }
+
+        .result-item {
+            background-color: var(--bg-main);
+            padding: 1rem;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid var(--border);
+            transition: border-color 0.3s ease;
+        }
+
+        .result-item:hover {
+            border-color: var(--accent);
+        }
+
+        .result-unit {
+            color: var(--text-muted);
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        .result-value {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        /* Mobile adjustments */
+        @media (max-width: 480px) {
+            .converter-card { padding: 1.5rem; }
+            .controls { grid-template-columns: 1fr; } /* Stacks the inputs neatly on mobile */
+        }
+    </style>
+</head>
+<body>
+
+    <div class="converter-card">
+        <div class="header">
+            <h1>Temperature Converter</h1>
+            <p>Accurate, real-time conversions.</p>
+        </div>
+
+        <div id="errorMessage" class="error-message"></div>
+
+        <div class="input-group">
+            <label for="tempInput">Enter Temperature</label>
+            <div class="controls">
+                <input type="number" id="tempInput" placeholder="e.g. 98.6" step="any">
+                <select id="unitSelect">
+                    <option value="C">Celsius (°C)</option>
+                    <option value="F">Fahrenheit (°F)</option>
+                    <option value="K">Kelvin (K)</option>
+                </select>
+            </div>
+        </div>
+
+        <button class="btn-convert" onclick="convertTemperature()">Convert Now</button>
+
+        <div id="resultsArea" class="results">
+            <div class="result-item" id="celsiusResult">
+                <span class="result-unit">Celsius</span>
+                <span class="result-value" id="valC">-- °C</span>
+            </div>
+            <div class="result-item" id="fahrenheitResult">
+                <span class="result-unit">Fahrenheit</span>
+                <span class="result-value" id="valF">-- °F</span>
+            </div>
+            <div class="result-item" id="kelvinResult">
+                <span class="result-unit">Kelvin</span>
+                <span class="result-value" id="valK">-- K</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Constants for Absolute Zero
+        const ABS_ZERO_C = -273.15;
+        const ABS_ZERO_F = -459.67;
+        const ABS_ZERO_K = 0;
+
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            const resultsDiv = document.getElementById('resultsArea');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            resultsDiv.style.display = 'none';
+        }
+
+        function hideError() {
+            document.getElementById('errorMessage').style.display = 'none';
+        }
+
+        function displayResults(c, f, k, inputUnit) {
+            document.getElementById('resultsArea').style.display = 'flex';
+            
+            // Format to 2 decimal places
+            document.getElementById('valC').textContent = c.toFixed(2) + ' °C';
+            document.getElementById('valF').textContent = f.toFixed(2) + ' °F';
+            document.getElementById('valK').textContent = k.toFixed(2) + ' K';
+
+            // Visually highlight the non-input units by fading the input unit slightly
+            document.getElementById('celsiusResult').style.opacity = (inputUnit === 'C') ? '0.5' : '1';
+            document.getElementById('fahrenheitResult').style.opacity = (inputUnit === 'F') ? '0.5' : '1';
+            document.getElementById('kelvinResult').style.opacity = (inputUnit === 'K') ? '0.5' : '1';
+        }
+
+        function convertTemperature() {
+            hideError();
+            
+            const inputField = document.getElementById('tempInput');
+            const unit = document.getElementById('unitSelect').value;
+            const inputValue = inputField.value;
+
+            // Validation 1: Check if empty or not a number
+            if (inputValue === '' || isNaN(inputValue)) {
+                showError("Please enter a valid numerical value.");
+                return;
+            }
+
+            const temp = parseFloat(inputValue);
+            let c, f, k;
+
+            // Validation 2 & Calculations: Absolute Zero Checks
+            if (unit === 'C') {
+                if (temp < ABS_ZERO_C) {
+                    showError(`Absolute zero violation: Temperature cannot be below ${ABS_ZERO_C}°C.`);
+                    return;
+                }
+                c = temp;
+                f = (temp * 9/5) + 32;
+                k = temp + 273.15;
+            } 
+            else if (unit === 'F') {
+                if (temp < ABS_ZERO_F) {
+                    showError(`Absolute zero violation: Temperature cannot be below ${ABS_ZERO_F}°F.`);
+                    return;
+                }
+                c = (temp - 32) * 5/9;
+                f = temp;
+                k = (temp - 32) * 5/9 + 273.15;
+            } 
+            else if (unit === 'K') {
+                if (temp < ABS_ZERO_K) {
+                    showError(`Absolute zero violation: Temperature cannot be below ${ABS_ZERO_K}K.`);
+                    return;
+                }
+                c = temp - 273.15;
+                f = (temp - 273.15) * 9/5 + 32;
+                k = temp;
+            }
+
+            // If all validations pass, show the results
+            displayResults(c, f, k, unit);
+        }
+
+        // Optional: Trigger conversion on Enter key press
+        document.getElementById('tempInput').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                convertTemperature();
+            }
+        });
+    </script>
+</body>
+</html>
