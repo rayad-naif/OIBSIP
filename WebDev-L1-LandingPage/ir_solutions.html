@@ -538,17 +538,69 @@
             .hero h1 { font-size: 3.5rem; }
             .contact-container { grid-template-columns: 1fr; gap: 3rem; }
             .footer-grid { grid-template-columns: 1fr 1fr; }
+            .services-grid { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
         }
 
         @media (max-width: 768px) {
+            /* Globally reduce padding for smaller screens */
+            :root {
+                --section-pad: 4rem 1.5rem;
+            }
+
+            .nav-container { padding: 1rem 1.5rem; }
             .nav-links, .nav-btn { display: none; }
+            
+            .nav-links.active {
+                display: flex;
+                flex-direction: column;
+                position: absolute;
+                top: 100%;
+                left: 0;
+                width: 100%;
+                background: rgba(5, 5, 5, 0.98);
+                backdrop-filter: blur(10px);
+                padding: 2rem;
+                text-align: center;
+                border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+                box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+                gap: 1.5rem; /* Space out the links vertically */
+            }
+
             .mobile-menu-btn { display: block; }
             
-            .hero { padding-top: 8rem; }
-            .hero h1 { font-size: 2.8rem; }
-            .hero-buttons { flex-direction: column; }
+            /* Smooth Logo resizing for mobile header */
+            .icon-i { font-size: 2.2rem; }
+            .icon-r { font-size: 1.5rem; }
+            .logo-text { font-size: 1rem; padding-left: 8px; letter-spacing: 2px; }
             
-            .footer-grid { grid-template-columns: 1fr; }
+            /* Hero Adjustments - explicit padding and centered layout */
+            .hero { padding: 8rem 1.5rem 5rem; }
+            .hero h1 { font-size: 2.5rem; }
+            .hero p { font-size: 1.05rem; margin-bottom: 2.5rem; }
+            .hero-buttons { flex-direction: column; width: 100%; gap: 1rem; }
+            .btn-primary, .btn-outline { width: 100%; text-align: center; }
+            
+            /* Grid resets */
+            .services-grid { grid-template-columns: 1fr; }
+            .footer-grid { grid-template-columns: 1fr; gap: 2.5rem; }
+            
+            /* Stats & Form Adjustments */
+            .stats { padding: 4rem 1.5rem; }
+            .stats-grid { grid-template-columns: 1fr 1fr; gap: 2rem; }
+            .stat-item h3 { font-size: 2.5rem; }
+            
+            .contact-form { padding: 2rem 1.5rem; }
+            .contact-info h3 { font-size: 2rem; }
+            
+            .footer { padding: 3rem 1.5rem 2rem; }
+        }
+        
+        @media (max-width: 480px) {
+            /* Extra fine-tuning for very small iPhones */
+            .hero h1 { font-size: 2.2rem; }
+            .stats-grid { grid-template-columns: 1fr; }
+            .stat-item h3 { font-size: 2.2rem; }
+            .logo-text { font-size: 0.85rem; letter-spacing: 1px; }
         }
     </style>
 </head>
@@ -763,5 +815,31 @@
         </div>
     </footer>
 
+    <script>
+        const mobileMenuBtn = document.querySelector('.mobile-menu-btn');
+        const navLinks = document.querySelector('.nav-links');
+
+        // Toggle menu visibility and icon
+        mobileMenuBtn.addEventListener('click', () => {
+            navLinks.classList.toggle('active');
+            
+            if (navLinks.classList.contains('active')) {
+                mobileMenuBtn.classList.remove('fa-bars');
+                mobileMenuBtn.classList.add('fa-xmark'); // Change to X icon
+            } else {
+                mobileMenuBtn.classList.remove('fa-xmark');
+                mobileMenuBtn.classList.add('fa-bars'); // Revert to hamburger
+            }
+        });
+
+        // Auto-close menu when a link is clicked
+        document.querySelectorAll('.nav-links a').forEach(link => {
+            link.addEventListener('click', () => {
+                navLinks.classList.remove('active');
+                mobileMenuBtn.classList.remove('fa-xmark');
+                mobileMenuBtn.classList.add('fa-bars');
+            });
+        });
+    </script>
 </body>
 </html>
