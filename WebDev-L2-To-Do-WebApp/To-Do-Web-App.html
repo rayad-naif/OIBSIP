@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TaskMaster - To-Do App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a; /* Slate 900 */
+        }
+        
+        /* Custom scrollbar for task lists */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(30, 41, 59, 0.5); /* Slate 800 */
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #475569; /* Slate 600 */
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #64748b; /* Slate 500 */
+        }
+
+        /* Smooth transitions */
+        .task-item {
+            transition: all 0.2s ease-in-out;
+        }
+    </style>
+</head>
+<body class="min-h-screen text-slate-200 p-4 md:p-8 flex justify-center items-start">
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed top-4 right-4 z-50 flex flex-col gap-2"></div>
+
+    <main class="w-full max-w-7xl bg-slate-800 rounded-3xl shadow-2xl overflow-hidden border border-slate-700 flex flex-col md:flex-row min-h-[80vh]">
+        
+        <!-- Left Side: Input & Header -->
+        <div class="w-full md:w-1/4 lg:w-1/5 bg-slate-800 p-6 md:p-8 border-b md:border-b-0 md:border-r border-slate-700 flex flex-col shrink-0">
+            <div class="mb-8">
+                <div class="w-12 h-12 bg-indigo-500 rounded-xl flex items-center justify-center text-white font-bold text-xl mb-4 shadow-lg shadow-indigo-500/20">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                    </svg>
+                </div>
+                <h1 class="text-3xl font-bold text-white tracking-tight">TaskMaster</h1>
+                <p class="text-slate-400 text-sm mt-1">Organize your day, efficiently.</p>
+            </div>
+
+            <form id="add-task-form" class="flex flex-col gap-4 mt-auto md:mt-0">
+                <div>
+                    <label for="new-task-input" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">New Task</label>
+                    <textarea 
+                        id="new-task-input" 
+                        rows="3" 
+                        placeholder="What needs to be done?" 
+                        class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-slate-100 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none resize-none transition-all placeholder-slate-600"
+                    ></textarea>
+                </div>
+                <div>
+                    <label for="new-task-deadline" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Deadline (Optional)</label>
+                    <input 
+                        type="datetime-local" 
+                        id="new-task-deadline" 
+                        class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-slate-100 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all text-sm"
+                        style="color-scheme: dark;"
+                    >
+                </div>
+                <button type="submit" class="w-full bg-indigo-500 hover:bg-indigo-400 text-white font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-indigo-500/20 active:scale-95 flex justify-center items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+                    </svg>
+                    Add Task
+                </button>
+            </form>
+        </div>
+
+        <!-- Right Side: Task Lists -->
+        <div class="w-full md:w-3/4 lg:w-4/5 flex flex-col md:flex-row bg-slate-900/50 overflow-x-auto">
+            
+            <!-- To Do -->
+            <div class="flex-1 p-5 md:p-6 flex flex-col min-w-[300px] border-b md:border-b-0 md:border-r border-slate-800 h-[50vh] md:h-auto">
+                <div class="flex items-center justify-between mb-4 shrink-0">
+                    <h2 class="text-lg font-bold text-slate-100 flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-slate-400"></span>
+                        To Do
+                    </h2>
+                    <span class="bg-slate-800 text-slate-300 text-xs font-semibold px-2.5 py-1 rounded-full border border-slate-700">
+                        <span id="todo-count">0</span>
+                    </span>
+                </div>
+                <div id="todo-list" class="flex-1 overflow-y-auto custom-scrollbar space-y-3 pr-2 pb-2"></div>
+            </div>
+
+            <!-- In Progress -->
+            <div class="flex-1 p-5 md:p-6 flex flex-col min-w-[300px] border-b md:border-b-0 md:border-r border-slate-800 bg-slate-900/30 h-[50vh] md:h-auto">
+                <div class="flex items-center justify-between mb-4 shrink-0">
+                    <h2 class="text-lg font-bold text-slate-100 flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+                        In Progress
+                    </h2>
+                    <span class="bg-slate-800 text-slate-300 text-xs font-semibold px-2.5 py-1 rounded-full border border-slate-700">
+                        <span id="inprogress-count">0</span>
+                    </span>
+                </div>
+                <div id="inprogress-list" class="flex-1 overflow-y-auto custom-scrollbar space-y-3 pr-2 pb-2"></div>
+            </div>
+
+            <!-- Done -->
+            <div class="flex-1 p-5 md:p-6 flex flex-col min-w-[300px] bg-slate-900/60 h-[50vh] md:h-auto">
+                <div class="flex items-center justify-between mb-4 shrink-0">
+                    <h2 class="text-lg font-bold text-slate-100 flex items-center gap-2 opacity-80">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                        Done
+                    </h2>
+                    <span class="bg-slate-800/80 text-slate-400 text-xs font-semibold px-2.5 py-1 rounded-full border border-slate-700/80">
+                        <span id="done-count">0</span>
+                    </span>
+                </div>
+                <div id="done-list" class="flex-1 overflow-y-auto custom-scrollbar space-y-3 pr-2 pb-2"></div>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        // State Management
+        let tasks = [];
+        let editingTaskId = null;
+
+        // DOM Elements
+        const form = document.getElementById('add-task-form');
+        const input = document.getElementById('new-task-input');
+        const deadlineInput = document.getElementById('new-task-deadline');
+        const todoList = document.getElementById('todo-list');
+        const inprogressList = document.getElementById('inprogress-list');
+        const doneList = document.getElementById('done-list');
+        const todoCount = document.getElementById('todo-count');
+        const inprogressCount = document.getElementById('inprogress-count');
+        const doneCount = document.getElementById('done-count');
+        const toastContainer = document.getElementById('toast-container');
+
+        // Initialize App
+        function init() {
+            loadTasks();
+            render();
+        }
+
+        // Local Storage Logic
+        function loadTasks() {
+            const storedTasks = localStorage.getItem('taskmaster_data');
+            if (storedTasks) {
+                try {
+                    tasks = JSON.parse(storedTasks);
+                    // Migrate older tasks to the new 3-status system
+                    tasks = tasks.map(t => {
+                        if (t.status === undefined) {
+                            t.status = t.completed ? 'done' : 'todo';
+                            delete t.completed;
+                        }
+                        return t;
+                    });
+                } catch (e) {
+                    console.error("Failed to parse local storage data", e);
+                    tasks = [];
+                }
+            }
+        }
+
+        function saveTasks() {
+            localStorage.setItem('taskmaster_data', JSON.stringify(tasks));
+        }
+
+        // Helper: Format Date
+        function formatDate(timestamp) {
+            if (!timestamp) return '';
+            return new Intl.DateTimeFormat('en-US', {
+                month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'
+            }).format(new Date(timestamp));
+        }
+
+        // Toast Notification System
+        function showToast(message, type = 'error') {
+            const toast = document.createElement('div');
+            const bgClass = type === 'error' ? 'bg-red-500/10 border-red-500/50 text-red-400' : 'bg-emerald-500/10 border-emerald-500/50 text-emerald-400';
+            toast.className = `px-4 py-3 rounded-xl border ${bgClass} text-sm font-medium shadow-lg backdrop-blur-sm transition-all duration-300 transform translate-x-full opacity-0 flex items-center gap-2`;
+            
+            toast.innerHTML = `
+                ${type === 'error' ? '⚠️' : '✓'} ${message}
+            `;
+            
+            toastContainer.appendChild(toast);
+            
+            // Animate in
+            requestAnimationFrame(() => {
+                toast.classList.remove('translate-x-full', 'opacity-0');
+            });
+
+            // Animate out and remove
+            setTimeout(() => {
+                toast.classList.add('translate-x-full', 'opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // Core Actions
+        function addTask(text) {
+            const trimmedText = text.trim();
+            if (!trimmedText) {
+                showToast("Task description cannot be empty.");
+                return;
+            }
+
+            const newTask = {
+                id: Date.now().toString(),
+                text: trimmedText,
+                status: 'todo', // 'todo', 'in-progress', 'done'
+                deadline: deadlineInput.value || null,
+                createdAt: Date.now(),
+                completedAt: null
+            };
+
+            tasks.unshift(newTask); // Add to top
+            saveTasks();
+            input.value = ''; // Clear input
+            deadlineInput.value = ''; // Clear deadline
+            render();
+            showToast("Task added successfully!", "success");
+        }
+
+        function changeStatus(id, newStatus) {
+            const task = tasks.find(t => t.id === id);
+            if (task) {
+                task.status = newStatus;
+                task.completedAt = newStatus === 'done' ? Date.now() : null;
+                saveTasks();
+                render();
+            }
+        }
+
+        function deleteTask(id) {
+            tasks = tasks.filter(t => t.id !== id);
+            saveTasks();
+            render();
+        }
+
+        // Edit Actions
+        function startEditing(id) {
+            editingTaskId = id;
+            render();
+        }
+
+        function cancelEditing() {
+            editingTaskId = null;
+            render();
+        }
+
+        function saveEdit(id, newText) {
+            const trimmedText = newText.trim();
+            if (!trimmedText) {
+                showToast("Task description cannot be empty.");
+                return;
+            }
+
+            const task = tasks.find(t => t.id === id);
+            if (task) {
+                task.text = trimmedText;
+                editingTaskId = null;
+                saveTasks();
+                render();
+            }
+        }
+
+        // Render Logic
+        function render() {
+            // Filter and sort tasks
+            const todoTasks = tasks.filter(t => t.status === 'todo').sort((a, b) => b.createdAt - a.createdAt);
+            const inprogressTasks = tasks.filter(t => t.status === 'in-progress').sort((a, b) => b.createdAt - a.createdAt);
+            const doneTasks = tasks.filter(t => t.status === 'done').sort((a, b) => b.completedAt - a.completedAt);
+
+            // Update Counts
+            todoCount.textContent = todoTasks.length;
+            inprogressCount.textContent = inprogressTasks.length;
+            doneCount.textContent = doneTasks.length;
+
+            // Render Helper Function
+            const renderList = (listElement, taskArray, emptyMsg, emptySub) => {
+                listElement.innerHTML = '';
+                if (taskArray.length === 0) {
+                    listElement.innerHTML = `
+                        <div class="h-full flex flex-col items-center justify-center text-slate-500 py-8 opacity-70">
+                            <p class="text-sm font-medium text-center">${emptyMsg}</p>
+                            <p class="text-xs mt-1 text-center">${emptySub}</p>
+                        </div>`;
+                } else {
+                    taskArray.forEach(task => listElement.appendChild(createTaskElement(task)));
+                }
+            };
+
+            renderList(todoList, todoTasks, "No to-do tasks.", "Add one on the left!");
+            renderList(inprogressList, inprogressTasks, "Nothing in progress.", "Start working on a task!");
+            renderList(doneList, doneTasks, "No completed tasks yet.", "Finish tasks to see them here.");
+        }
+
+        // Factory function for Task DOM elements
+        function createTaskElement(task) {
+            const li = document.createElement('div');
+            const isDone = task.status === 'done';
+            li.className = `task-item bg-slate-800 border ${isDone ? 'border-slate-700/50 opacity-70' : 'border-slate-700'} rounded-xl p-4 flex flex-col gap-3 group hover:border-slate-500 transition-all shadow-sm`;
+
+            // Top Header: Status Select and Actions
+            const headerDiv = document.createElement('div');
+            headerDiv.className = 'flex justify-between items-start gap-2';
+            
+            // Status Dropdown
+            const statusSelect = document.createElement('select');
+            statusSelect.className = `text-xs font-bold rounded-lg px-2 py-1.5 outline-none border cursor-pointer appearance-none ${
+                task.status === 'done' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 
+                task.status === 'in-progress' ? 'bg-blue-500/10 text-blue-400 border-blue-500/30' : 
+                'bg-slate-700 text-slate-300 border-slate-600'
+            }`;
+            statusSelect.onchange = (e) => changeStatus(task.id, e.target.value);
+            
+            const options = [
+                { val: 'todo', text: 'To Do' },
+                { val: 'in-progress', text: 'In Progress' },
+                { val: 'done', text: 'Done' }
+            ];
+            
+            options.forEach(opt => {
+                const option = document.createElement('option');
+                option.value = opt.val;
+                option.textContent = opt.text;
+                option.selected = task.status === opt.val;
+                option.className = "bg-slate-800 text-slate-100 font-medium";
+                statusSelect.appendChild(option);
+            });
+
+            // Action Buttons Container
+            const actionsContainer = document.createElement('div');
+            actionsContainer.className = `flex gap-1 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity ${editingTaskId === task.id ? 'hidden' : ''}`;
+
+            const editBtn = document.createElement('button');
+            editBtn.onclick = () => startEditing(task.id);
+            editBtn.className = 'p-1.5 text-slate-400 hover:text-indigo-400 hover:bg-indigo-500/10 rounded-lg transition-colors';
+            editBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>`;
+            
+            const deleteBtn = document.createElement('button');
+            deleteBtn.onclick = () => deleteTask(task.id);
+            deleteBtn.className = 'p-1.5 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors';
+            deleteBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>`;
+            
+            actionsContainer.append(editBtn, deleteBtn);
+            headerDiv.append(statusSelect, actionsContainer);
+
+            // Content Area (Text or Edit Input)
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'flex-1 min-w-0';
+
+            if (editingTaskId === task.id) {
+                // Inline Edit Mode
+                const editForm = document.createElement('form');
+                editForm.className = 'flex flex-col gap-2 mt-2';
+                editForm.onsubmit = (e) => {
+                    e.preventDefault();
+                    saveEdit(task.id, editInput.value);
+                };
+
+                const editInput = document.createElement('textarea');
+                editInput.rows = "2";
+                editInput.value = task.text;
+                editInput.className = 'w-full bg-slate-900 border border-indigo-500/50 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500 resize-none';
+                
+                editInput.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        saveEdit(task.id, editInput.value);
+                    }
+                    if (e.key === 'Escape') cancelEditing();
+                });
+
+                const actionsDiv = document.createElement('div');
+                actionsDiv.className = 'flex gap-2 justify-end';
+
+                const cancelBtn = document.createElement('button');
+                cancelBtn.type = 'button';
+                cancelBtn.onclick = cancelEditing;
+                cancelBtn.className = 'text-xs px-3 py-1.5 rounded-lg font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-700 transition-colors';
+                cancelBtn.textContent = 'Cancel';
+
+                const saveBtn = document.createElement('button');
+                saveBtn.type = 'submit';
+                saveBtn.className = 'text-xs px-3 py-1.5 rounded-lg font-medium bg-indigo-500 text-white hover:bg-indigo-400 transition-colors';
+                saveBtn.textContent = 'Save';
+
+                actionsDiv.append(cancelBtn, saveBtn);
+                editForm.append(editInput, actionsDiv);
+                contentDiv.appendChild(editForm);
+
+                setTimeout(() => {
+                    editInput.focus();
+                    editInput.setSelectionRange(editInput.value.length, editInput.value.length);
+                }, 0);
+
+            } else {
+                // Normal Display Mode
+                const textP = document.createElement('p');
+                textP.className = `text-sm whitespace-pre-wrap break-words mt-1 ${isDone ? 'text-slate-500 line-through' : 'text-slate-200'}`;
+                textP.textContent = task.text;
+                contentDiv.appendChild(textP);
+
+                // Footer (Timestamps & Deadline)
+                const footerDiv = document.createElement('div');
+                footerDiv.className = 'flex flex-wrap items-center justify-between gap-2 mt-3 pt-3 border-t border-slate-700/50';
+
+                const timeP = document.createElement('p');
+                timeP.className = 'text-[10px] text-slate-500 font-medium flex items-center gap-1';
+                
+                if (isDone) {
+                    timeP.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" /></svg> ${formatDate(task.completedAt)}`;
+                } else {
+                    timeP.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg> ${formatDate(task.createdAt)}`;
+                }
+                footerDiv.appendChild(timeP);
+
+                if (task.deadline) {
+                    const deadlineP = document.createElement('p');
+                    const overdue = !isDone && new Date(task.deadline).getTime() < Date.now();
+                    deadlineP.className = `text-[10px] font-semibold flex items-center gap-1 px-2 py-1 rounded-md ${overdue ? 'bg-red-500/10 text-red-400 border border-red-500/20' : 'bg-slate-900 text-amber-400/80 border border-slate-700'}`;
+                    deadlineP.innerHTML = `⏱ Due: ${formatDate(new Date(task.deadline).getTime())}`;
+                    footerDiv.appendChild(deadlineP);
+                }
+
+                contentDiv.appendChild(footerDiv);
+            }
+
+            li.append(headerDiv, contentDiv);
+            return li;
+        }
+
+        // Form Submission
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            addTask(input.value);
+        });
+
+        // Allow Shift+Enter to create new lines, Enter to submit in textarea
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                form.dispatchEvent(new Event('submit'));
+            }
+        });
+
+        // Boot the app
+        init();
+    </script>
+</body>
+</html>
