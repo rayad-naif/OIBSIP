@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-50">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Authentication System</title>
+
+  <!-- Chosen Palette: Slate & Indigo -->
+  <!-- Application Structure Plan: A clean, single-page client-side authentication system with hash-based route management (#login, #register, #dashboard). Implements Web Crypto API for SHA-256 password hashing before storing in localStorage, strict input validation (length and numeric presence), duplicate user/email detection, generic authentication error messaging, route guarding against unauthenticated dashboard access, and complete session termination upon logout. All demo buttons and mock data helpers have been completely removed for a production-like flow. -->
+  <!-- Visualization & Content Choices:
+       1. View Routing (Vanilla JS): Pure single-page view swapping based on hash routes and session state.
+       2. Web Crypto SHA-256: Native browser-side cryptographic digest producing a hex string. Zero plain-text password storage.
+       3. Dynamic Input Validation: Real-time visual requirement checklist for password registration rules.
+       4. Protected Route Guard: Automatic redirection to login when accessing #dashboard without an active session token.
+       5. Unicode / CSS Visual Elements: Styled HTML components and Unicode glyphs. NO SVG used.
+  -->
+  <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="h-full font-sans text-slate-800 antialiased flex flex-col justify-between selection:bg-indigo-500 selection:text-white">
+
+  <!-- Main Navigation Bar -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-40">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6">
+      <div class="flex justify-between h-16 items-center">
+        <!-- App Identity -->
+        <div class="flex items-center space-x-2.5 cursor-pointer" onclick="navigateTo('login')">
+          <span class="text-xl leading-none" aria-hidden="true">&#128274;</span>
+          <span class="font-bold text-lg tracking-tight text-slate-900">AuthSystem</span>
+        </div>
+
+        <!-- Dynamic Header Links -->
+        <nav class="flex items-center space-x-2 text-xs font-semibold" id="nav-links">
+          <button onclick="navigateTo('login')" id="nav-login-btn" class="px-3 py-1.5 rounded-lg text-slate-600 hover:text-indigo-600 hover:bg-slate-100 transition-colors">
+            Login
+          </button>
+          <button onclick="navigateTo('register')" id="nav-register-btn" class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white transition-colors">
+            Register
+          </button>
+          <button onclick="navigateTo('dashboard')" id="nav-dashboard-btn" class="px-3 py-1.5 rounded-lg text-slate-600 hover:text-indigo-600 hover:bg-slate-100 transition-colors hidden">
+            Dashboard
+          </button>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <!-- Global Alert / Status Banner -->
+  <div class="max-w-md mx-auto px-4 w-full mt-4">
+    <div id="global-banner" class="hidden p-3.5 rounded-xl border text-xs font-medium transition-all duration-200"></div>
+  </div>
+
+  <!-- Main View Container -->
+  <main class="flex-grow flex items-center justify-center p-4 sm:p-6">
+
+    <!-- ========================================== -->
+    <!-- VIEW 1: REGISTRATION PAGE                  -->
+    <!-- ========================================== -->
+    <div id="view-register" class="w-full max-w-md bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8 space-y-6 hidden">
+      <div>
+        <h1 class="text-2xl font-bold text-slate-900">Create Account</h1>
+        <p class="text-xs text-slate-500 mt-1">Register credentials into the secure local database</p>
+      </div>
+
+      <!-- Registration Form Alert -->
+      <div id="register-error" class="hidden p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs font-medium"></div>
+
+      <form id="form-register" onsubmit="handleRegistration(event)" class="space-y-4" novalidate>
+        <!-- Username Field -->
+        <div>
+          <label for="reg-username" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+            Username <span class="text-red-500">*</span>
+          </label>
+          <input type="text" id="reg-username" name="username" required placeholder="e.g. john_doe"
+            class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm outline-none transition-colors">
+        </div>
+
+        <!-- Email Field -->
+        <div>
+          <label for="reg-email" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+            Email Address <span class="text-red-500">*</span>
+          </label>
+          <input type="email" id="reg-email" name="email" required placeholder="john@example.com"
+            class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm outline-none transition-colors">
+        </div>
+
+        <!-- Password Field -->
+        <div>
+          <div class="flex justify-between items-center mb-1">
+            <label for="reg-password" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
+              Password <span class="text-red-500">*</span>
+            </label>
+            <button type="button" onclick="togglePasswordVisibility('reg-password', this)" class="text-xs text-indigo-600 hover:text-indigo-800 font-medium">
+              Show
+            </button>
+          </div>
+          <input type="password" id="reg-password" name="password" required placeholder="••••••••" oninput="validatePasswordRules(this.value)"
+            class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm font-mono outline-none transition-colors">
+        </div>
+
+        <!-- Real-Time Password Validation Checklist -->
+        <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 space-y-1.5 text-xs">
+          <span class="font-semibold text-slate-600 block mb-1">Password Requirements:</span>
+          <div id="rule-length" class="flex items-center text-slate-500">
+            <span class="mr-2 text-sm font-mono" id="rule-icon-length">&#9675;</span>
+            At least 8 characters in length
+          </div>
+          <div id="rule-number" class="flex items-center text-slate-500">
+            <span class="mr-2 text-sm font-mono" id="rule-icon-number">&#9675;</span>
+            Contains at least 1 numeric digit (0-9)
+          </div>
+        </div>
+
+        <!-- Register Button -->
+        <button type="submit" id="btn-register" class="w-full py-2.5 px-4 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm shadow-sm transition-colors focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+          Register
+        </button>
+      </form>
+
+      <div class="pt-4 border-t border-slate-100 text-center">
+        <p class="text-xs text-slate-500">
+          Already have an account? 
+          <button onclick="navigateTo('login')" class="text-indigo-600 font-semibold hover:underline">Log in</button>
+        </p>
+      </div>
+    </div>
+
+
+    <!-- ========================================== -->
+    <!-- VIEW 2: LOGIN PAGE                         -->
+    <!-- ========================================== -->
+    <div id="view-login" class="w-full max-w-md bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8 space-y-6">
+      <div>
+        <h1 class="text-2xl font-bold text-slate-900">Sign In</h1>
+        <p class="text-xs text-slate-500 mt-1">Enter your credentials to access the protected portal</p>
+      </div>
+
+      <!-- Generic Authentication Error Alert -->
+      <div id="login-error" class="hidden p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs font-medium"></div>
+
+      <form id="form-login" onsubmit="handleLogin(event)" class="space-y-4" novalidate>
+        <!-- Username or Email Field -->
+        <div>
+          <label for="login-identity" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+            Username or Email <span class="text-red-500">*</span>
+          </label>
+          <input type="text" id="login-identity" name="identity" required placeholder="Username or email address"
+            class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm outline-none transition-colors">
+        </div>
+
+        <!-- Password Field -->
+        <div>
+          <div class="flex justify-between items-center mb-1">
+            <label for="login-password" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
+              Password <span class="text-red-500">*</span>
+            </label>
+            <button type="button" onclick="togglePasswordVisibility('login-password', this)" class="text-xs text-indigo-600 hover:text-indigo-800 font-medium">
+              Show
+            </button>
+          </div>
+          <input type="password" id="login-password" name="password" required placeholder="••••••••"
+            class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm font-mono outline-none transition-colors">
+        </div>
+
+        <!-- Login Button -->
+        <button type="submit" id="btn-login" class="w-full py-2.5 px-4 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm shadow-sm transition-colors focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+          Login
+        </button>
+      </form>
+
+      <div class="pt-4 border-t border-slate-100 text-center">
+        <p class="text-xs text-slate-500">
+          Don't have an account? 
+          <button onclick="navigateTo('register')" class="text-indigo-600 font-semibold hover:underline">Register here</button>
+        </p>
+      </div>
+    </div>
+
+
+    <!-- ========================================== -->
+    <!-- VIEW 3: PROTECTED DASHBOARD PAGE           -->
+    <!-- ========================================== -->
+    <div id="view-dashboard" class="w-full max-w-3xl bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8 space-y-6 hidden">
+      
+      <!-- Protected Page Header -->
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-6 border-b border-slate-200 gap-4">
+        <div>
+          <div class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 mb-2">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5"></span> Protected Session Active
+          </div>
+          <h1 class="text-2xl font-bold text-slate-900">Welcome, <span id="dash-username" class="text-indigo-600">User</span></h1>
+          <p class="text-xs text-slate-500 mt-0.5">Authenticated via SHA-256 client session</p>
+        </div>
+
+        <!-- Logout Button -->
+        <button onclick="handleLogout()" class="px-4 py-2 rounded-lg bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 font-semibold text-xs transition-colors flex items-center space-x-1.5">
+          <span>&#128682;</span>
+          <span>Logout</span>
+        </button>
+      </div>
+
+      <!-- Protected Profile & Security Information -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        
+        <!-- Account Details Card -->
+        <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+          <h2 class="text-xs font-bold uppercase text-slate-400 tracking-wider">Account Information</h2>
+          <div class="text-xs space-y-1.5 text-slate-700">
+            <div><strong class="text-slate-900">Username:</strong> <span id="dash-info-username">--</span></div>
+            <div><strong class="text-slate-900">Email:</strong> <span id="dash-info-email">--</span></div>
+            <div><strong class="text-slate-900">User ID:</strong> <span id="dash-info-id" class="font-mono text-[11px] text-slate-500">--</span></div>
+            <div><strong class="text-slate-900">Registered On:</strong> <span id="dash-info-created">--</span></div>
+          </div>
+        </div>
+
+        <!-- Session Status Card -->
+        <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+          <h2 class="text-xs font-bold uppercase text-slate-400 tracking-wider">Session Details</h2>
+          <div class="text-xs space-y-1.5 text-slate-700">
+            <div><strong class="text-slate-900">Storage Type:</strong> <code class="bg-slate-200 px-1 py-0.5 rounded text-[11px]">localStorage</code></div>
+            <div><strong class="text-slate-900">Session Token:</strong> <span id="dash-info-token" class="font-mono text-[11px] text-indigo-600 truncate block">--</span></div>
+            <div><strong class="text-slate-900">Logged In At:</strong> <span id="dash-info-login-time">--</span></div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Hashed Password Verification Inspector -->
+      <div class="p-4 rounded-xl bg-slate-900 text-slate-200 space-y-2 font-mono text-xs">
+        <div class="flex justify-between items-center text-slate-400 font-sans text-[11px] border-b border-slate-800 pb-1.5">
+          <span class="font-semibold text-slate-300">Stored Password Hash (SHA-256)</span>
+          <span class="text-emerald-400">Zero Plain-Text Guarantee</span>
+        </div>
+        <p id="dash-info-hash" class="break-all text-indigo-300 bg-slate-950 p-3 rounded border border-slate-800 text-[11px] leading-relaxed">
+          --
+        </p>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- Application Footer -->
+  <footer class="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-400">
+    Pure JavaScript Client-Side Authentication System &bull; SHA-256 Web Crypto API
+  </footer>
+
+  <!-- Core JavaScript Logic -->
+  <script>
+    /* ==========================================================================
+       STORAGE KEYS & APPLICATION STATE
+       ========================================================================== */
+    const DB_KEY_USERS = 'auth_system_users_v2';
+    const DB_KEY_SESSION = 'auth_system_session_v2';
+
+    let activeSession = null;
+
+    /* ==========================================================================
+       INITIALIZATION & SPA ROUTE GUARD
+       ========================================================================== */
+    document.addEventListener('DOMContentLoaded', () => {
+      checkSessionState();
+
+      // Handle window hash location
+      window.addEventListener('hashchange', handleRoute);
+      handleRoute();
+    });
+
+    /**
+     * Hash Router & Protected Route Guard
+     */
+    function handleRoute() {
+      const hash = window.location.hash.replace('#', '') || 'login';
+
+      hideFormErrors();
+
+      // PROTECTED ROUTE GUARD: Redirect unauthenticated dashboard requests
+      if (hash === 'dashboard' && !activeSession) {
+        showGlobalBanner('Access Denied. Please log in first to access the protected page.', 'error');
+        window.location.hash = 'login';
+        renderView('login');
+        return;
+      }
+
+      // Automatically send logged-in users away from login/register to dashboard
+      if ((hash === 'login' || hash === 'register') && activeSession) {
+        window.location.hash = 'dashboard';
+        renderView('dashboard');
+        return;
+      }
+
+      renderView(hash);
+    }
+
+    /**
+     * View Switcher
+     */
+    function renderView(viewName) {
+      document.getElementById('view-login').classList.add('hidden');
+      document.getElementById('view-register').classList.add('hidden');
+      document.getElementById('view-dashboard').classList.add('hidden');
+
+      const navLoginBtn = document.getElementById('nav-login-btn');
+      const navRegisterBtn = document.getElementById('nav-register-btn');
+      const navDashboardBtn = document.getElementById('nav-dashboard-btn');
+
+      if (activeSession) {
+        navLoginBtn.classList.add('hidden');
+        navRegisterBtn.classList.add('hidden');
+        navDashboardBtn.classList.remove('hidden');
+      } else {
+        navLoginBtn.classList.remove('hidden');
+        navRegisterBtn.classList.remove('hidden');
+        navDashboardBtn.classList.add('hidden');
+      }
+
+      if (viewName === 'register') {
+        document.getElementById('view-register').classList.remove('hidden');
+      } else if (viewName === 'dashboard') {
+        document.getElementById('view-dashboard').classList.remove('hidden');
+        populateDashboard();
+      } else {
+        document.getElementById('view-login').classList.remove('hidden');
+      }
+    }
+
+    function navigateTo(viewName) {
+      window.location.hash = viewName;
+    }
+
+    function checkSessionState() {
+      const rawSession = localStorage.getItem(DB_KEY_SESSION);
+      if (rawSession) {
+        try {
+          activeSession = JSON.parse(rawSession);
+        } catch (e) {
+          activeSession = null;
+          localStorage.removeItem(DB_KEY_SESSION);
+        }
+      } else {
+        activeSession = null;
+      }
+    }
+
+    /* ==========================================================================
+       CRYPTOGRAPHIC UTILITY (SHA-256 via Native Web Crypto API)
+       ========================================================================== */
+    /**
+     * Converts raw text into a hex SHA-256 digest string
+     * @param {string} text 
+     * @returns {Promise<string>} Hex representation of SHA-256 hash
+     */
+    async function hashSHA256(text) {
+      const encoder = new TextEncoder();
+      const data = encoder.encode(text);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    /* ==========================================================================
+       LOCAL STORAGE DATABASE HELPERS
+       ========================================================================== */
+    function getUsersFromDB() {
+      const raw = localStorage.getItem(DB_KEY_USERS);
+      return raw ? JSON.parse(raw) : [];
+    }
+
+    function saveUsersToDB(users) {
+      localStorage.setItem(DB_KEY_USERS, JSON.stringify(users));
+    }
+
+    /* ==========================================================================
+       FORM VALIDATION & REGISTRATION LOGIC
+       ========================================================================== */
+
+    /**
+     * Real-time registration password requirement validator
+     */
+    function validatePasswordRules(password) {
+      const hasMinLength = password.length >= 8;
+      const hasNumber = /\d/.test(password);
+
+      const ruleLengthEl = document.getElementById('rule-length');
+      const ruleNumberEl = document.getElementById('rule-number');
+      const iconLengthEl = document.getElementById('rule-icon-length');
+      const iconNumberEl = document.getElementById('rule-icon-number');
+
+      if (hasMinLength) {
+        ruleLengthEl.className = 'flex items-center text-emerald-600 font-medium';
+        iconLengthEl.innerHTML = '&#10003;';
+      } else {
+        ruleLengthEl.className = 'flex items-center text-slate-500';
+        iconLengthEl.innerHTML = '&#9675;';
+      }
+
+      if (hasNumber) {
+        ruleNumberEl.className = 'flex items-center text-emerald-600 font-medium';
+        iconNumberEl.innerHTML = '&#10003;';
+      } else {
+        ruleNumberEl.className = 'flex items-center text-slate-500';
+        iconNumberEl.innerHTML = '&#9675;';
+      }
+
+      return hasMinLength && hasNumber;
+    }
+
+    /**
+     * Registration Submit Handler
+     */
+    async function handleRegistration(e) {
+      e.preventDefault();
+      hideFormErrors();
+
+      const usernameInput = document.getElementById('reg-username').value.trim();
+      const emailInput = document.getElementById('reg-email').value.trim();
+      const passwordInput = document.getElementById('reg-password').value;
+
+      // 1. Basic empty submission check
+      if (!usernameInput || !emailInput || !passwordInput) {
+        showError('register-error', 'All fields are required. Please complete the form.');
+        return;
+      }
+
+      // 2. Email format validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(emailInput)) {
+        showError('register-error', 'Please enter a valid email address.');
+        return;
+      }
+
+      // 3. Password rule validation (min 8 characters, at least 1 number)
+      if (!validatePasswordRules(passwordInput)) {
+        showError('register-error', 'Password must be at least 8 characters long and contain at least 1 number.');
+        return;
+      }
+
+      // 4. Duplicate Username or Email check
+      const usersDB = getUsersFromDB();
+      const duplicateUser = usersDB.find(
+        u => u.username.toLowerCase() === usernameInput.toLowerCase() || u.email.toLowerCase() === emailInput.toLowerCase()
+      );
+
+      if (duplicateUser) {
+        if (duplicateUser.username.toLowerCase() === usernameInput.toLowerCase()) {
+          showError('register-error', 'An account with this username already exists.');
+        } else {
+          showError('register-error', 'An account with this email address already exists.');
+        }
+        return;
+      }
+
+      // 5. Hash Password & Save User
+      const btn = document.getElementById('btn-register');
+      btn.disabled = true;
+      btn.textContent = 'Registering...';
+
+      try {
+        const hashedPassword = await hashSHA256(passwordInput);
+
+        const newUser = {
+          id: 'usr_' + Date.now().toString(36),
+          username: usernameInput,
+          email: emailInput,
+          passwordHash: hashedPassword,
+          createdAt: new Date().toISOString()
+        };
+
+        usersDB.push(newUser);
+        saveUsersToDB(usersDB);
+
+        // Reset form
+        document.getElementById('form-register').reset();
+        validatePasswordRules('');
+
+        showGlobalBanner('Account created successfully! You can now log in.', 'success');
+        
+        // Prefill login input
+        document.getElementById('login-identity').value = usernameInput;
+        navigateTo('login');
+
+      } catch (err) {
+        showError('register-error', 'An error occurred while hashing the password.');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Register';
+      }
+    }
+
+    /* ==========================================================================
+       LOGIN & AUTHENTICATION LOGIC
+       ========================================================================== */
+
+    /**
+     * Login Submit Handler
+     */
+    async function handleLogin(e) {
+      e.preventDefault();
+      hideFormErrors();
+
+      const identityInput = document.getElementById('login-identity').value.trim();
+      const passwordInput = document.getElementById('login-password').value;
+
+      // 1. Basic empty submission check
+      if (!identityInput || !passwordInput) {
+        showError('login-error', 'Please enter both your username/email and password.');
+        return;
+      }
+
+      const btn = document.getElementById('btn-login');
+      btn.disabled = true;
+      btn.textContent = 'Authenticating...';
+
+      try {
+        const hashedInput = await hashSHA256(passwordInput);
+        const usersDB = getUsersFromDB();
+
+        // Search for user matching username OR email
+        const user = usersDB.find(
+          u => u.username.toLowerCase() === identityInput.toLowerCase() || u.email.toLowerCase() === identityInput.toLowerCase()
+        );
+
+        // Ambiguous credential failure (never reveal if username or password was incorrect)
+        if (!user || user.passwordHash !== hashedInput) {
+          showError('login-error', 'Invalid username/email or password provided.');
+          btn.disabled = false;
+          btn.textContent = 'Login';
+          return;
+        }
+
+        // Create Session
+        activeSession = {
+          userId: user.id,
+          username: user.username,
+          email: user.email,
+          token: 'token_' + Math.random().toString(36).substring(2) + Date.now().toString(36),
+          loginTime: new Date().toISOString()
+        };
+
+        localStorage.setItem(DB_KEY_SESSION, JSON.stringify(activeSession));
+
+        showGlobalBanner(`Welcome back, ${user.username}!`, 'success');
+        document.getElementById('form-login').reset();
+        navigateTo('dashboard');
+
+      } catch (err) {
+        showError('login-error', 'An error occurred during authentication.');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Login';
+      }
+    }
+
+    /* ==========================================================================
+       LOGOUT LOGIC
+       ========================================================================== */
+    function handleLogout() {
+      activeSession = null;
+      localStorage.removeItem(DB_KEY_SESSION);
+
+      showGlobalBanner('Logged out successfully.', 'info');
+      navigateTo('login');
+    }
+
+    /* ==========================================================================
+       DASHBOARD POPULATION
+       ========================================================================== */
+    function populateDashboard() {
+      if (!activeSession) return;
+
+      const usersDB = getUsersFromDB();
+      const userRecord = usersDB.find(u => u.id === activeSession.userId) || {
+        id: activeSession.userId,
+        username: activeSession.username,
+        email: activeSession.email,
+        createdAt: activeSession.loginTime,
+        passwordHash: 'N/A'
+      };
+
+      document.getElementById('dash-username').textContent = userRecord.username;
+      document.getElementById('dash-info-username').textContent = userRecord.username;
+      document.getElementById('dash-info-email').textContent = userRecord.email;
+      document.getElementById('dash-info-id').textContent = userRecord.id;
+      document.getElementById('dash-info-created').textContent = new Date(userRecord.createdAt).toLocaleString();
+
+      document.getElementById('dash-info-token').textContent = activeSession.token;
+      document.getElementById('dash-info-login-time').textContent = new Date(activeSession.loginTime).toLocaleTimeString();
+      document.getElementById('dash-info-hash').textContent = userRecord.passwordHash;
+    }
+
+    /* ==========================================================================
+       UI UTILITY HELPERS
+       ========================================================================== */
+    function togglePasswordVisibility(inputId, buttonEl) {
+      const input = document.getElementById(inputId);
+      if (input.type === 'password') {
+        input.type = 'text';
+        buttonEl.textContent = 'Hide';
+      } else {
+        input.type = 'password';
+        buttonEl.textContent = 'Show';
+      }
+    }
+
+    function showError(elementId, message) {
+      const el = document.getElementById(elementId);
+      el.textContent = message;
+      el.classList.remove('hidden');
+    }
+
+    function hideFormErrors() {
+      document.getElementById('login-error').classList.add('hidden');
+      document.getElementById('register-error').classList.add('hidden');
+    }
+
+    function showGlobalBanner(message, type = 'info') {
+      const banner = document.getElementById('global-banner');
+      banner.textContent = message;
+
+      if (type === 'error') {
+        banner.className = 'p-3.5 rounded-xl border text-xs font-medium bg-red-50 border-red-200 text-red-700';
+      } else if (type === 'success') {
+        banner.className = 'p-3.5 rounded-xl border text-xs font-medium bg-emerald-50 border-emerald-200 text-emerald-800';
+      } else {
+        banner.className = 'p-3.5 rounded-xl border text-xs font-medium bg-slate-100 border-slate-200 text-slate-700';
+      }
+
+      banner.classList.remove('hidden');
+
+      setTimeout(() => {
+        banner.classList.add('hidden');
+      }, 4000);
+    }
+  </script>
+</body>
+</html>
