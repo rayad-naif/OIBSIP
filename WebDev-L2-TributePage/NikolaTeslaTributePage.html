@@ -1,0 +1,1091 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nikola Tesla: The Archival Experience</title>
+
+  <!-- Chosen Palette: Warm Parchment, Vintage Ink & Edison Copper -->
+  <!-- Application Structure Plan: A magazine-inspired interactive archival dashboard. Organized into 6 editorial chapters: (1) Curated Biography & Mental Models, (2) Interactive AC Motor Stator Workshop, (3) Filterable Patent Ledger & Chronology, (4) Quantitative Impact Charts (Chart.js), (5) The Archives: Quotes & Letters, and (6) Reader's Knowledge Challenge. Designed with human editorial styling, curator sidebars, and tactile museum-grade UI elements for an organic, human-crafted reading experience. -->
+  <!-- Visualization & Content Choices:
+    1. AC Motor Simulator: Pure JS state-driven interactive engine animating 2-phase AC field rotation with human-readable physical explanations.
+    2. Patent & Life Timeline: Interactive search and tag filtering with archival metadata cards.
+    3. Patent Distribution: Chart.js Donut chart with customized warm palette.
+    4. Invention Skill Radar: Chart.js Radar plot mapping Tesla's inventive dimensions with curated analytical annotations.
+    5. Quiz: Dynamic JS state machine with conversational historical feedback.
+    Confirming NO SVG graphics used. NO Mermaid JS used. -->
+  <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;0,800;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            parchment: '#fbf9f4',
+            parchmentDark: '#f3efe6',
+            ink: '#1c1d1f',
+            inkLight: '#3a3d42',
+            copper: '#b45309',
+            copperLight: '#fef3c7',
+            cobalt: '#1e40af',
+            cardBg: '#ffffff',
+            borderSepia: '#e5decf',
+          },
+          fontFamily: {
+            heading: ['Playfair Display', 'Georgia', 'serif'],
+            body: ['Plus Jakarta Sans', 'sans-serif'],
+            mono: ['Courier Prime', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    .chart-container {
+      position: relative;
+      width: 100%;
+      max-width: 580px;
+      margin-left: auto;
+      margin-right: auto;
+      height: 310px;
+      max-height: 360px;
+    }
+    @media (min-width: 768px) {
+      .chart-container {
+        height: 340px;
+      }
+    }
+    .paper-texture {
+      background-color: #fbf9f4;
+      background-image: radial-gradient(#d5cbbe 0.6px, transparent 0.6px);
+      background-size: 24px 24px;
+    }
+    .stamp-badge {
+      display: inline-block;
+      padding: 0.15rem 0.5rem;
+      border: 1.5px solid #b45309;
+      color: #b45309;
+      font-family: 'Courier Prime', monospace;
+      font-weight: 700;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      transform: rotate(-1deg);
+    }
+  </style>
+</head>
+<body class="paper-texture text-ink font-body antialiased min-h-screen flex flex-col selection:bg-copperLight selection:text-copper">
+
+  <header class="sticky top-0 z-50 bg-[#1c1d1f]/95 backdrop-blur-md text-white border-b-2 border-copper shadow-lg">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col lg:flex-row justify-between items-center py-3">
+      <div class="flex items-center space-x-3 mb-2 lg:mb-0 cursor-pointer" onclick="switchTab('overview')">
+        <span class="text-2xl text-amber-500">⚡</span>
+        <div>
+          <h1 class="font-heading text-xl sm:text-2xl font-bold tracking-wide text-amber-400">TESLA ARCHIVES</h1>
+          <p class="text-[11px] text-stone-300 font-mono tracking-widest uppercase">Curated Historical Exhibit • 1856–1943</p>
+        </div>
+      </div>
+
+      <nav class="flex flex-wrap justify-center gap-1 sm:gap-2 text-xs font-medium">
+        <button id="tab-btn-overview" onclick="switchTab('overview')" class="px-3 py-1.5 rounded-md transition-all duration-200 text-amber-400 font-semibold bg-white/10">
+          📜 I. Life & Mind
+        </button>
+        <button id="tab-btn-engine" onclick="switchTab('engine')" class="px-3 py-1.5 rounded-md transition-all duration-200 text-stone-300 hover:text-white hover:bg-white/10">
+          ⚡ II. AC Workshop
+        </button>
+        <button id="tab-btn-timeline" onclick="switchTab('timeline')" class="px-3 py-1.5 rounded-md transition-all duration-200 text-stone-300 hover:text-white hover:bg-white/10">
+          ⏳ III. Patent Ledger
+        </button>
+        <button id="tab-btn-analytics" onclick="switchTab('analytics')" class="px-3 py-1.5 rounded-md transition-all duration-200 text-stone-300 hover:text-white hover:bg-white/10">
+          📊 IV. Data & Impact
+        </button>
+        <button id="tab-btn-quotes" onclick="switchTab('quotes')" class="px-3 py-1.5 rounded-md transition-all duration-200 text-stone-300 hover:text-white hover:bg-white/10">
+          💬 V. In His Words
+        </button>
+        <button id="tab-btn-quiz" onclick="switchTab('quiz')" class="px-3 py-1.5 rounded-md transition-all duration-200 text-stone-300 hover:text-white hover:bg-white/10">
+          🎯 VI. Knowledge Check
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <section class="bg-gradient-to-b from-[#1c1d1f] to-[#282a2e] text-white py-12 px-4 border-b-4 border-copper">
+    <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-8">
+      <div class="md:w-2/3 space-y-4 text-center md:text-left">
+        <div class="flex items-center justify-center md:justify-start space-x-2">
+          <span class="stamp-badge border-amber-400 text-amber-400">ARCHIVAL RECORD</span>
+          <span class="text-xs font-mono text-stone-400">Smiljan • New York • Wardenclyffe</span>
+        </div>
+        <h2 class="font-heading text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white leading-tight">
+          The Man Who Harnesses <span class="text-amber-400 italic">Lightning</span> & Harnesses Time
+        </h2>
+        <p class="text-stone-300 text-sm sm:text-base leading-relaxed max-w-2xl font-light">
+          Nikola Tesla was not merely an inventor; he was a visionary prophet of the electrical age. From conceiving the rotating magnetic field during a walk in Budapest to lighting the 1893 World’s Fair, his genius laid the foundation for modern power grid infrastructure and wireless communications.
+        </p>
+        <div class="pt-2 flex flex-wrap justify-center md:justify-start gap-3 text-xs font-mono">
+          <div class="bg-white/5 border border-amber-500/30 px-3 py-2 rounded">
+            <span class="block text-amber-400 text-base font-bold">300+</span>
+            <span class="text-stone-400 text-[10px]">Worldwide Patents</span>
+          </div>
+          <div class="bg-white/5 border border-amber-500/30 px-3 py-2 rounded">
+            <span class="block text-amber-400 text-base font-bold">1888</span>
+            <span class="text-stone-400 text-[10px]">Polyphase AC Motor</span>
+          </div>
+          <div class="bg-white/5 border border-amber-500/30 px-3 py-2 rounded">
+            <span class="block text-amber-400 text-base font-bold">1895</span>
+            <span class="text-stone-400 text-[10px]">Niagara Hydroelectric</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="md:w-1/3 flex justify-center">
+        <div class="bg-parchment p-3 rounded-lg shadow-2xl border-2 border-copper max-w-xs transform -rotate-1 hover:rotate-0 transition-transform duration-300">
+          <img 
+            src="https://upload.wikimedia.org/wikipedia/commons/7/79/Tesla_circa_1890.jpeg" 
+            alt="Portrait of Nikola Tesla, circa 1890" 
+            class="rounded shadow-inner w-full h-auto border border-stone-300"
+          >
+          <div class="mt-2 text-center">
+            <span class="font-mono text-[10px] text-copper uppercase block font-bold">Plate No. 1 • c. 1890</span>
+            <p class="text-[11px] text-stone-600 italic">Portrait by Napoleon Sarony, New York City</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+    <div id="view-overview" class="space-y-8">
+      
+      <div class="bg-white rounded-xl p-6 shadow-sm border border-borderSepia space-y-3">
+        <div class="flex items-center space-x-2 text-copper font-mono text-xs font-bold uppercase tracking-wider">
+          <span>🏛️ Chapter I • Curator's Overview</span>
+        </div>
+        <h3 class="font-heading text-2xl sm:text-3xl font-bold text-ink">The Mind of "Poetical Science" & Mental Modeling</h3>
+        <p class="text-stone-700 leading-relaxed text-sm sm:text-base">
+          This exhibit explores how Nikola Tesla synthesized pure physics, vivid imagination, and meticulous engineering. Unlike inventors who relied on trial-and-error physical prototypes, Tesla possessed a rare gift: the ability to run full-scale mechanical and electrical simulations inside his mind before ever putting pen to paper.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <div class="lg:col-span-2 space-y-6 text-stone-800 leading-relaxed">
+          <div class="bg-white rounded-xl p-6 shadow-sm border border-borderSepia space-y-4">
+            <h4 class="font-heading text-xl font-bold text-ink flex items-center space-x-2">
+              <span class="text-copper">⚡</span>
+              <span>Born in a Lightning Storm (1856)</span>
+            </h4>
+            <p class="text-sm sm:text-base text-stone-700">
+              According to family tradition, Tesla was born at precisely midnight between July 9 and July 10, 1856, in the village of Smiljan (Austrian Empire, present-day Croatia) during a terrifying lightning storm. The midwife remarked that the storm was an ill omen, calling him a "child of darkness." His mother, Djuka Mandić—an inventive woman who created craft tools for household tasks—replied: <em>"No, he will be a child of light."</em>
+            </p>
+            <p class="text-sm sm:text-base text-stone-700">
+              From childhood, Tesla suffered from intense flashes of light accompanied by vivid visual imagery. Rather than a disability, he harnessed this ability to build machines mentally. He would run a mental turbine for weeks, inspect it for mechanical friction in his head, and then manufacture the real parts with zero dimensional errors.
+            </p>
+          </div>
+
+          <div class="bg-white rounded-xl p-6 shadow-sm border border-borderSepia space-y-4">
+            <h4 class="font-heading text-xl font-bold text-ink flex items-center space-x-2">
+              <span class="text-copper">🔄</span>
+              <span>The Budapest Epiphany & The War of the Currents</span>
+            </h4>
+            <p class="text-sm sm:text-base text-stone-700">
+              In February 1882, while recovering from an illness in Budapest, Tesla was taking an afternoon walk through the city park with his friend Anthony Szigeti. While reciting Goethe's <em>Faust</em>, a flash of insight struck him. He drew a diagram in the dirt with a wooden walking stick: the principle of the <strong>Rotating Magnetic Field</strong>.
+            </p>
+            <p class="text-sm sm:text-base text-stone-700">
+              Arriving in New York in June 1884 with four cents in his pocket, Tesla briefly worked for Thomas Edison. Edison promised $50,000 for redesigning inefficient DC dynamos, but when Tesla completed the task, Edison dismissed it as "American humor." Tesla resigned immediately, igniting the bitter <strong>"War of the Currents."</strong> Partnering with industrialist George Westinghouse, Tesla proved that polyphase Alternating Current (AC) could be transmitted over vast distances at high voltage—a feat impossible with Edison's low-voltage DC grid.
+            </p>
+          </div>
+
+          <div class="bg-white rounded-xl p-6 shadow-sm border border-borderSepia space-y-4">
+            <h4 class="font-heading text-xl font-bold text-ink flex items-center space-x-2">
+              <span class="text-copper">📡</span>
+              <span>High Frequency, Wireless Vision & Wardenclyffe</span>
+            </h4>
+            <p class="text-sm sm:text-base text-stone-700">
+              Following his triumph at the 1893 Chicago World's Fair and the 1895 Niagara Falls hydroelectric project, Tesla pushed into unexplored territory: high-frequency currents and wireless energy. In 1899 at Colorado Springs, he built a giant high-voltage oscillator capable of producing artificial lightning bolts over 100 feet long.
+            </p>
+            <p class="text-sm sm:text-base text-stone-700">
+              He envisioned a global wireless system that would transmit not only news, stock updates, and pictures, but also electrical power directly through the Earth's upper atmosphere. His massive Wardenclyffe Tower project on Long Island ultimately failed due to financial pullouts by J.P. Morgan, yet his foundational patents laid the bedrock for modern radio, wireless telemetry, radar, and remote control.
+            </p>
+          </div>
+        </div>
+
+        <div class="space-y-6">
+          
+          <div class="bg-[#1c1d1f] text-white rounded-xl p-6 shadow-md border-t-4 border-copper space-y-4">
+            <div class="flex items-center justify-between">
+              <span class="stamp-badge border-amber-400 text-amber-400">CURATOR'S NOTE</span>
+              <span class="text-xs text-stone-400 font-mono">Archive Note #3</span>
+            </div>
+            <h4 class="font-heading text-lg font-bold text-amber-400">Personal Quirks & Peculiarities</h4>
+            <ul class="text-xs text-stone-300 space-y-3 font-light leading-relaxed">
+              <li class="flex items-start space-x-2">
+                <span class="text-amber-400 font-bold">•</span>
+                <span><strong>Obsession with 3-6-9:</strong> Tesla insisted on walking around a block 3 times before entering a building and required 18 napkins to clean his table settings.</span>
+              </li>
+              <li class="flex items-start space-x-2">
+                <span class="text-amber-400 font-bold">•</span>
+                <span><strong>Photographic Memory:</strong> He possessed a eidetic memory, memorizing entire books and technical blueprints effortlessly.</span>
+              </li>
+              <li class="flex items-start space-x-2">
+                <span class="text-amber-400 font-bold">•</span>
+                <span><strong>Love for Pigeons:</strong> In his final years living at the Hotel New Yorker, he spent hours feeding street pigeons and famously cared for a special white pigeon.</span>
+              </li>
+            </ul>
+          </div>
+
+          <div class="bg-parchmentDark rounded-xl p-6 border border-borderSepia space-y-4">
+            <h4 class="font-heading text-lg font-bold text-ink">Foundational Engineering Pillars</h4>
+            <div class="space-y-3 text-xs text-stone-700">
+              <div class="p-3 bg-white rounded border border-stone-200">
+                <strong class="text-copper block text-sm font-heading">1. Polyphase AC Motor</strong>
+                <span>Eliminated graphite brushes, friction wear, and dangerous sparking commutator hazards.</span>
+              </div>
+              <div class="p-3 bg-white rounded border border-stone-200">
+                <strong class="text-cobalt block text-sm font-heading">2. Step-Up Transformer</strong>
+                <span>Allowed safe low-voltage generation to step up to high voltage for efficient long-distance grid lines.</span>
+              </div>
+              <div class="p-3 bg-white rounded border border-stone-200">
+                <strong class="text-amber-700 block text-sm font-heading">3. High-Frequency Tesla Coil</strong>
+                <span>Resonant transformer circuit designed to produce high-voltage, low-current, high-frequency electricity.</span>
+              </div>
+            </div>
+            <button onclick="switchTab('engine')" class="w-full py-2.5 bg-copper hover:bg-amber-700 text-white font-bold text-xs uppercase tracking-wider rounded transition-colors shadow">
+              Step into the AC Motor Workshop →
+            </button>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+
+    <div id="view-engine" class="hidden space-y-8">
+      
+      <div class="bg-white rounded-xl p-6 shadow-sm border border-borderSepia space-y-3">
+        <div class="flex items-center space-x-2 text-copper font-mono text-xs font-bold uppercase tracking-wider">
+          <span>⚙️ Chapter II • Interactive Physics Workshop</span>
+        </div>
+        <h3 class="font-heading text-2xl font-bold text-ink">Simulating the Polyphase AC Rotating Magnetic Field</h3>
+        <p class="text-stone-700 leading-relaxed text-sm sm:text-base">
+          Prior to Tesla, direct current (DC) motors required mechanical graphite brushes physically rubbing against a spinning copper commutator to flip polarity. Tesla realized that by feeding two out-of-phase Alternating Currents ($90^\circ$ phase angle) into stationary outer coils (Stator), a smoothly spinning magnetic vector is created in thin air without any mechanical contact.
+        </p>
+      </div>
+
+      <div class="bg-[#1c1d1f] rounded-xl p-6 shadow-xl border-2 border-copper text-white space-y-6">
+        
+        <div class="flex flex-col sm:flex-row justify-between items-center gap-4 pb-4 border-b border-stone-700">
+          <div>
+            <span class="stamp-badge border-amber-400 text-amber-400">LABORATORY SIMULATION</span>
+            <h4 class="font-heading text-lg font-bold text-amber-400 mt-1">2-Phase AC Stator & Induction Rotor Engine</h4>
+          </div>
+          <div class="flex space-x-2">
+            <button id="sim-prev-btn" onclick="simStepPrev()" class="px-3 py-1.5 bg-stone-700 hover:bg-stone-600 rounded text-xs font-semibold disabled:opacity-40">
+              ⏮️ Previous Phase
+            </button>
+            <button id="sim-next-btn" onclick="simStepNext()" class="px-4 py-1.5 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded text-xs shadow">
+              ▶️ Next Phase
+            </button>
+            <button onclick="simReset()" class="px-3 py-1.5 bg-cobalt hover:bg-blue-600 rounded text-xs font-semibold">
+              🔄 Reset Engine
+            </button>
+          </div>
+        </div>
+
+        <div class="bg-stone-900/90 p-5 rounded-lg border border-amber-500/30 flex flex-col md:flex-row items-center justify-between gap-6">
+          <div class="space-y-2 max-w-xl">
+            <div class="flex items-center space-x-3">
+              <span id="sim-step-badge" class="bg-amber-500/20 text-amber-400 border border-amber-500/40 text-xs font-mono font-bold px-2.5 py-0.5 rounded">
+                Phase 1 of 4 (0°)
+              </span>
+              <span id="sim-step-op" class="text-xs font-mono font-bold text-sky-400 uppercase tracking-widest">
+                VECTOR: 0° (NORTH)
+              </span>
+            </div>
+            <h5 id="sim-step-title" class="font-heading text-lg font-bold text-white">Phase A Peak (0°) — Magnetic Vector Points UP</h5>
+            <p id="sim-step-desc" class="text-xs text-stone-300 leading-relaxed font-light">
+              Phase A current is at maximum positive (+Imax). Phase B current is zero. Stator Coil A1 becomes the magnetic North pole, dragging the rotor vertically.
+            </p>
+          </div>
+          <div class="bg-stone-800 p-4 rounded-lg border border-stone-700 text-center min-w-[160px]">
+            <span class="text-[10px] text-stone-400 uppercase font-mono block">Current Field Angle</span>
+            <span id="sim-angle-display" class="text-2xl font-mono font-bold text-amber-400">0°</span>
+            <span class="text-[10px] text-emerald-400 block font-mono mt-1">BRUSH FRICTION: 0%</span>
+          </div>
+        </div>
+
+        <div>
+          <h5 class="text-xs font-mono font-bold uppercase tracking-wider text-stone-400 mb-3">Stator Coil Currents & Electromagnetic Parameters</h5>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 font-mono text-xs">
+            <div id="coil-a1" class="bg-stone-900 border border-stone-700 p-3 rounded text-center">
+              <span class="text-stone-400 block text-[10px]">Coil A1 (Top)</span>
+              <span class="coil-val text-sm font-bold text-amber-400">+MAX (NORTH)</span>
+            </div>
+            <div id="coil-b1" class="bg-stone-900 border border-stone-700 p-3 rounded text-center">
+              <span class="text-stone-400 block text-[10px]">Coil B1 (Right)</span>
+              <span class="coil-val text-sm font-bold text-stone-500">0 (NEUTRAL)</span>
+            </div>
+            <div id="coil-a2" class="bg-stone-900 border border-stone-700 p-3 rounded text-center">
+              <span class="text-stone-400 block text-[10px]">Coil A2 (Bottom)</span>
+              <span class="coil-val text-sm font-bold text-stone-500">-MAX (SOUTH)</span>
+            </div>
+            <div id="coil-b2" class="bg-stone-900 border border-stone-700 p-3 rounded text-center">
+              <span class="text-stone-400 block text-[10px]">Coil B2 (Left)</span>
+              <span class="coil-val text-sm font-bold text-stone-500">0 (NEUTRAL)</span>
+            </div>
+            <div id="coil-rot" class="bg-stone-900 border border-amber-500/40 p-3 rounded text-center bg-amber-500/5">
+              <span class="text-amber-400 block text-[10px] font-bold">Rotor Orientation</span>
+              <span class="coil-val text-sm font-bold text-amber-400">VERTICAL (0°)</span>
+            </div>
+            <div id="coil-ind" class="bg-stone-900 border border-stone-700 p-3 rounded text-center">
+              <span class="text-stone-400 block text-[10px]">Torque State</span>
+              <span class="coil-val text-sm font-bold text-sky-400">PEAK INDUCTION</span>
+            </div>
+            <div id="coil-eff" class="bg-stone-900 border border-stone-700 p-3 rounded text-center">
+              <span class="text-stone-400 block text-[10px]">Mechanical Wear</span>
+              <span class="coil-val text-sm font-bold text-emerald-400">NONE (AIR GAP)</span>
+            </div>
+            <div id="coil-step" class="bg-stone-900 border border-stone-700 p-3 rounded text-center">
+              <span class="text-stone-400 block text-[10px]">Cycle Position</span>
+              <span class="coil-val text-sm font-bold text-sky-400">STEP 1 / 4</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white/5 p-4 rounded border border-white/10 text-xs text-stone-300 leading-relaxed font-light">
+          <strong class="text-amber-400">Historical Significance:</strong> Because Tesla's motor relied on induction (creating current in the inner rotor purely via the moving magnetic field of the outer stator), it eliminated spark hazards entirely. This enabled high-power electric motors to run continuously in hazardous factories, mines, and electric transit systems.
+        </div>
+      </div>
+    </div>
+
+    <div id="view-timeline" class="hidden space-y-8">
+      
+      <div class="bg-white rounded-xl p-6 shadow-sm border border-borderSepia space-y-3">
+        <div class="flex items-center space-x-2 text-copper font-mono text-xs font-bold uppercase tracking-wider">
+          <span>⏳ Chapter III • Historical Chronology</span>
+        </div>
+        <h3 class="font-heading text-2xl font-bold text-ink">The Patent Ledger & Life Milestones</h3>
+        <p class="text-stone-700 leading-relaxed text-sm sm:text-base">
+          Browse through Nikola Tesla's life events, major invention filings, and lasting scientific honours. Use the search bar or topic filters to pinpoint specific moments in history.
+        </p>
+
+        <div class="pt-4 flex flex-col sm:flex-row gap-3 justify-between items-center">
+          <div class="flex flex-wrap gap-1.5 text-xs">
+            <button onclick="filterTimeline('all')" class="tl-filter-btn px-3 py-1.5 bg-[#1c1d1f] text-white font-semibold rounded">All Records</button>
+            <button onclick="filterTimeline('early')" class="tl-filter-btn px-3 py-1.5 bg-stone-100 hover:bg-stone-200 text-stone-700 font-semibold rounded">Early Career</button>
+            <button onclick="filterTimeline('acpower')" class="tl-filter-btn px-3 py-1.5 bg-stone-100 hover:bg-stone-200 text-stone-700 font-semibold rounded">AC Power & Motors</button>
+            <button onclick="filterTimeline('wireless')" class="tl-filter-btn px-3 py-1.5 bg-stone-100 hover:bg-stone-200 text-stone-700 font-semibold rounded">Wireless & Radio</button>
+            <button onclick="filterTimeline('legacy')" class="tl-filter-btn px-3 py-1.5 bg-stone-100 hover:bg-stone-200 text-stone-700 font-semibold rounded">Legacy & Honors</button>
+          </div>
+
+          <div class="w-full sm:w-64 relative">
+            <input 
+              type="text" 
+              id="tl-search" 
+              onkeyup="searchTimeline()" 
+              placeholder="Search patent or year..." 
+              class="w-full pl-8 pr-3 py-1.5 border border-stone-300 rounded text-xs focus:ring-2 focus:ring-copper focus:outline-none bg-parchment"
+            >
+            <span class="absolute left-2.5 top-2 text-stone-400 text-xs">🔍</span>
+          </div>
+        </div>
+      </div>
+
+      <div id="timeline-grid" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      </div>
+    </div>
+
+    <div id="view-analytics" class="hidden space-y-8">
+      
+      <div class="bg-white rounded-xl p-6 shadow-sm border border-borderSepia space-y-3">
+        <div class="flex items-center space-x-2 text-copper font-mono text-xs font-bold uppercase tracking-wider">
+          <span>📊 Chapter IV • Analytical Breakdown</span>
+        </div>
+        <h3 class="font-heading text-2xl font-bold text-ink">Invention Analytics & Mindset Mapping</h3>
+        <p class="text-stone-700 leading-relaxed text-sm sm:text-base">
+          Quantitative perspective on Tesla's portfolio of over 300 worldwide patents alongside a radar mapping of his multidisciplinary scientific skillsets.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-borderSepia flex flex-col justify-between space-y-4">
+          <div>
+            <span class="text-xs font-mono text-copper font-bold uppercase tracking-wider block">Figure 1.0 • Patent Portfolio Distribution</span>
+            <h4 class="font-heading text-lg font-bold text-ink">Inventions by Technical Domain</h4>
+            <p class="text-xs text-stone-600 mt-1">
+              Relative proportion of Tesla's patented inventions across energy grid systems, wireless frequencies, lighting, and mechanical engines.
+            </p>
+          </div>
+
+          <div class="chart-container">
+            <canvas id="chart-patents"></canvas>
+          </div>
+
+          <div class="bg-parchmentDark p-3 rounded border border-borderSepia text-xs text-stone-700">
+            <strong>Historical Insight:</strong> Over 60% of Tesla's early career patents were dedicated to establishing the complete polyphase AC ecosystem (generators, transformers, motors, and transmission distribution).
+          </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-borderSepia flex flex-col justify-between space-y-4">
+          <div>
+            <span class="text-xs font-mono text-cobalt font-bold uppercase tracking-wider block">Figure 2.0 • Mindset Mapping</span>
+            <h4 class="font-heading text-lg font-bold text-ink">Dimensions of Tesla's Inventive Genius</h4>
+            <p class="text-xs text-stone-600 mt-1">
+              Evaluating the mental and scientific skillsets combined by Tesla to conceive technologies decades ahead of his time.
+            </p>
+          </div>
+
+          <div class="chart-container">
+            <canvas id="chart-mindset"></canvas>
+          </div>
+
+          <div class="bg-parchmentDark p-3 rounded border border-borderSepia text-xs text-stone-700">
+            <strong>Curator's Note:</strong> Tesla ranked extraordinarily high in internal visual mental modeling, allowing him to bypass traditional trial-and-error physical prototyping.
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div id="view-quotes" class="hidden space-y-8">
+      
+      <div class="bg-white rounded-xl p-6 shadow-sm border border-borderSepia space-y-3">
+        <div class="flex items-center space-x-2 text-copper font-mono text-xs font-bold uppercase tracking-wider">
+          <span>💬 Chapter V • Original Transcripts</span>
+        </div>
+        <h3 class="font-heading text-2xl font-bold text-ink">The Quote Vault: In Tesla's Own Words</h3>
+        <p class="text-stone-700 leading-relaxed text-sm sm:text-base">
+          Read authentic quotes from Nikola Tesla's lectures, interviews, and his 1919 autobiography <em>My Inventions</em>. Filter by topic or trigger a random quote selection below.
+        </p>
+
+        <div class="pt-2 flex flex-wrap justify-between items-center gap-3">
+          <div class="flex space-x-2 text-xs">
+            <button onclick="filterQuotes('all')" class="quote-filter-btn px-3 py-1.5 bg-[#1c1d1f] text-white rounded font-semibold">All Quotes</button>
+            <button onclick="filterQuotes('energy')" class="quote-filter-btn px-3 py-1.5 bg-stone-100 hover:bg-stone-200 text-stone-700 rounded font-semibold">Energy & Cosmos</button>
+            <button onclick="filterQuotes('mind')" class="quote-filter-btn px-3 py-1.5 bg-stone-100 hover:bg-stone-200 text-stone-700 rounded font-semibold">Invention & Mind</button>
+            <button onclick="filterQuotes('future')" class="quote-filter-btn px-3 py-1.5 bg-stone-100 hover:bg-stone-200 text-stone-700 rounded font-semibold">The Future</button>
+          </div>
+          <button onclick="getRandomQuote()" class="px-4 py-1.5 bg-copper hover:bg-amber-700 text-white font-bold text-xs rounded shadow transition-colors">
+            ✨ Featured Random Quote
+          </button>
+        </div>
+      </div>
+
+      <div id="featured-quote-box" class="bg-[#1c1d1f] text-white p-8 rounded-xl shadow-xl border-2 border-copper text-center space-y-4">
+        <span class="text-4xl text-amber-400 block font-heading">“</span>
+        <blockquote id="featured-quote-text" class="font-heading text-lg sm:text-xl md:text-2xl italic text-amber-100 max-w-3xl mx-auto leading-relaxed">
+          If you want to find the secrets of the universe, think in terms of energy, frequency and vibration.
+        </blockquote>
+        <cite id="featured-quote-author" class="block text-xs uppercase tracking-widest text-amber-400 font-mono">
+          — Nikola Tesla, 1942 Interview
+        </cite>
+      </div>
+
+      <div id="quotes-grid" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      </div>
+    </div>
+
+    <div id="view-quiz" class="hidden space-y-8">
+      
+      <div class="bg-white rounded-xl p-6 shadow-sm border border-borderSepia space-y-3">
+        <div class="flex items-center space-x-2 text-copper font-mono text-xs font-bold uppercase tracking-wider">
+          <span>🎯 Chapter VI • Educational Assessment</span>
+        </div>
+        <h3 class="font-heading text-2xl font-bold text-ink">The Reader's Knowledge Challenge</h3>
+        <p class="text-stone-700 leading-relaxed text-sm sm:text-base">
+          Test your comprehension of Nikola Tesla's life, the AC motor principles, and the War of the Currents. Answer the questions below to receive immediate historical context feedback.
+        </p>
+      </div>
+
+      <div class="bg-white p-6 sm:p-8 rounded-xl shadow-md border border-borderSepia max-w-3xl mx-auto space-y-6">
+        
+        <div class="flex justify-between items-center pb-4 border-b border-stone-200">
+          <div>
+            <span id="quiz-progress" class="text-xs font-mono font-bold text-cobalt uppercase">Question 1 of 4</span>
+            <h4 id="quiz-title" class="font-heading text-lg font-bold text-ink">War of the Currents</h4>
+          </div>
+          <div class="bg-parchmentDark px-3 py-1.5 rounded border border-borderSepia text-right">
+            <span class="text-[10px] text-stone-500 uppercase block font-mono">Score</span>
+            <span id="quiz-score-num" class="text-base font-bold text-ink font-mono">0 / 4</span>
+          </div>
+        </div>
+
+        <div class="space-y-4">
+          <p id="quiz-question-text" class="text-stone-800 text-base sm:text-lg font-medium leading-snug">
+            Loading question...
+          </p>
+
+          <div id="quiz-options-container" class="space-y-3 pt-2">
+          </div>
+        </div>
+
+        <div id="quiz-feedback-box" class="hidden p-4 rounded text-xs leading-relaxed">
+        </div>
+
+        <div class="flex justify-between items-center pt-4 border-t border-stone-200">
+          <button id="quiz-restart-btn" onclick="resetQuiz()" class="px-3 py-1.5 text-xs text-stone-500 hover:text-ink underline font-mono">
+            Restart Quiz
+          </button>
+          <button id="quiz-next-btn" onclick="nextQuestion()" class="px-5 py-2 bg-[#1c1d1f] hover:bg-stone-800 text-amber-400 font-bold text-xs rounded shadow disabled:opacity-50">
+            Next Question →
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+
+  <footer class="bg-[#1c1d1f] text-stone-400 py-8 border-t-2 border-copper text-xs font-mono">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-4 text-center md:text-left">
+      <div>
+        <h5 class="font-heading text-sm text-amber-400 font-bold tracking-wider">NIKOLA TESLA HISTORICAL ARCHIVE</h5>
+        <p class="mt-1 text-stone-400">Created as an interactive educational exhibition dedicated to electrical history.</p>
+      </div>
+      <div class="text-stone-400 space-y-1 text-[11px]">
+        <p>Source materials: US Patent & Trademark Office Archives & Smithsonian Institution.</p>
+        <p>Single-Page Interactive Application • HTML5, Tailwind CSS & Chart.js</p>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    const views = ['overview', 'engine', 'timeline', 'analytics', 'quotes', 'quiz'];
+
+    function switchTab(targetView) {
+      views.forEach(v => {
+        const viewEl = document.getElementById(`view-${v}`);
+        const btnEl = document.getElementById(`tab-btn-${v}`);
+        if (v === targetView) {
+          viewEl.classList.remove('hidden');
+          btnEl.classList.add('text-amber-400', 'font-semibold', 'bg-white/10');
+          btnEl.classList.remove('text-stone-300');
+        } else {
+          viewEl.classList.add('hidden');
+          btnEl.classList.remove('text-amber-400', 'font-semibold', 'bg-white/10');
+          btnEl.classList.add('text-stone-300');
+        }
+      });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      
+      if (targetView === 'analytics') {
+        setTimeout(initCharts, 100);
+      }
+    }
+
+    const simSteps = [
+      {
+        step: 1,
+        title: "Phase A Peak (0°) — Field Vector Points UP",
+        desc: "Phase A current is at maximum positive (+Imax). Phase B is zero. Stator coil A1 becomes North Pole, pulling the rotor vertically.",
+        op: "VECTOR: 0° (NORTH)",
+        angle: "0°",
+        a1: "+MAX (NORTH)", b1: "0 (NEUTRAL)", a2: "-MAX (SOUTH)", b2: "0 (NEUTRAL)",
+        rot: "VERTICAL (0°)", ind: "PEAK INDUCTION", eff: "NONE (AIR GAP)", stepStr: "STEP 1 / 4"
+      },
+      {
+        step: 2,
+        title: "Phase B Peak (90°) — Field Vector Rotates RIGHT",
+        desc: "Phase A current drops to zero. Phase B reaches maximum positive (+Imax). Magnetic vector rotates 90° clockwise towards Coil B1.",
+        op: "VECTOR: 90° (EAST)",
+        angle: "90°",
+        a1: "0 (NEUTRAL)", b1: "+MAX (NORTH)", a2: "0 (NEUTRAL)", b2: "-MAX (SOUTH)",
+        rot: "HORIZONTAL (90°)", ind: "SMOOTH CONTINUOUS", eff: "NONE (AIR GAP)", stepStr: "STEP 2 / 4"
+      },
+      {
+        step: 3,
+        title: "Phase A Inverted (180°) — Field Vector Points DOWN",
+        desc: "Phase A current reaches maximum negative (-Imax). Coil A2 becomes North Pole. Vector points 180° downwards, keeping rotor spinning.",
+        op: "VECTOR: 180° (SOUTH)",
+        angle: "180°",
+        a1: "-MAX (SOUTH)", b1: "0 (NEUTRAL)", a2: "+MAX (NORTH)", b2: "0 (NEUTRAL)",
+        rot: "VERTICAL (180°)", ind: "PEAK INDUCTION", eff: "NONE (AIR GAP)", stepStr: "STEP 3 / 4"
+      },
+      {
+        step: 4,
+        title: "Phase B Inverted (270°) — Field Vector Rotates LEFT",
+        desc: "Phase B current reaches maximum negative (-Imax). Coil B2 becomes North Pole. Vector points 270° to the left, completing 3/4 rotation.",
+        op: "VECTOR: 270° (WEST)",
+        angle: "270°",
+        a1: "0 (NEUTRAL)", b1: "-MAX (SOUTH)", a2: "0 (NEUTRAL)", b2: "+MAX (NORTH)",
+        rot: "HORIZONTAL (270°)", ind: "SMOOTH CONTINUOUS", eff: "NONE (AIR GAP)", stepStr: "STEP 4 / 4"
+      }
+    ];
+
+    let currentSimStep = 0;
+
+    function renderSimStep() {
+      const data = simSteps[currentSimStep];
+      document.getElementById('sim-step-badge').innerText = `Phase ${data.step} of 4`;
+      document.getElementById('sim-step-title').innerText = data.title;
+      document.getElementById('sim-step-desc').innerText = data.desc;
+      document.getElementById('sim-step-op').innerText = data.op;
+      document.getElementById('sim-angle-display').innerText = data.angle;
+
+      document.getElementById('coil-a1').querySelector('.coil-val').innerText = data.a1;
+      document.getElementById('coil-b1').querySelector('.coil-val').innerText = data.b1;
+      document.getElementById('coil-a2').querySelector('.coil-val').innerText = data.a2;
+      document.getElementById('coil-b2').querySelector('.coil-val').innerText = data.b2;
+      document.getElementById('coil-rot').querySelector('.coil-val').innerText = data.rot;
+      document.getElementById('coil-ind').querySelector('.coil-val').innerText = data.ind;
+      document.getElementById('coil-eff').querySelector('.coil-val').innerText = data.eff;
+      document.getElementById('coil-step').querySelector('.coil-val').innerText = data.stepStr;
+
+      document.getElementById('sim-prev-btn').disabled = currentSimStep === 0;
+      document.getElementById('sim-next-btn').disabled = currentSimStep === simSteps.length - 1;
+    }
+
+    function simStepNext() {
+      if (currentSimStep < simSteps.length - 1) {
+        currentSimStep++;
+        renderSimStep();
+      }
+    }
+
+    function simStepPrev() {
+      if (currentSimStep > 0) {
+        currentSimStep--;
+        renderSimStep();
+      }
+    }
+
+    function simReset() {
+      currentSimStep = 0;
+      renderSimStep();
+    }
+
+    const timelineData = [
+      {
+        year: "1856",
+        title: "Birth in Smiljan",
+        category: "early",
+        patent: "BIOGRAPHICAL RECORD",
+        desc: "Nikola Tesla is born in Smiljan (Austrian Empire) during a fierce midnight lightning storm."
+      },
+      {
+        year: "1882",
+        title: "Discovery of Rotating Magnetic Field",
+        category: "acpower",
+        patent: "THEORY DISCOVERY",
+        desc: "Conceives the principle of the Rotating Magnetic Field while walking in a Budapest park reciting Goethe's Faust."
+      },
+      {
+        year: "1884",
+        title: "Arrival in New York City",
+        category: "early",
+        patent: "IMMIGRATION RECORD",
+        desc: "Arrives in the U.S. with 4 cents in his pocket and a letter of recommendation to Thomas Edison."
+      },
+      {
+        year: "1888",
+        title: "Polyphase AC Motor Patent",
+        category: "acpower",
+        patent: "US PATENT #381,968",
+        desc: "Files historic US patents for the polyphase AC induction motor; licenses rights to George Westinghouse."
+      },
+      {
+        year: "1893",
+        title: "Chicago World's Fair Triumph",
+        category: "acpower",
+        patent: "EXPOSITION RECORD",
+        desc: "Westinghouse and Tesla illuminate the World's Columbian Exposition using AC power, winning the War of the Currents."
+      },
+      {
+        year: "1895",
+        title: "Niagara Falls Hydroelectric Plant",
+        category: "acpower",
+        patent: "INFRASTRUCTURE RECORD",
+        desc: "Engineers the world's first major hydroelectric power station at Niagara Falls, transmitting AC power to Buffalo, NY."
+      },
+      {
+        year: "1898",
+        title: "First Remote-Controlled Boat",
+        category: "wireless",
+        patent: "US PATENT #613,809",
+        desc: "Demonstrates the world's first radio remote-controlled boat (teleautomaton) at Madison Square Garden."
+      },
+      {
+        year: "1899",
+        title: "Colorado Springs Experiments",
+        category: "wireless",
+        patent: "LABORATORY ARCHIVE",
+        desc: "Builds high-voltage laboratory; creates artificial lightning sparks exceeding 100 feet and studies terrestrial power."
+      },
+      {
+        year: "1901",
+        title: "Wardenclyffe Tower Construction",
+        category: "wireless",
+        patent: "LONG ISLAND PROJECT",
+        desc: "Begins building a 187-foot wireless transmission tower intended for global wireless power and communication."
+      },
+      {
+        year: "1943",
+        title: "Passing & Radio Patent Priority",
+        category: "legacy",
+        patent: "US SUPREME COURT #320",
+        desc: "Passes away in New York at age 86. Months later, US Supreme Court upholds Tesla's prior patents for the invention of radio."
+      },
+      {
+        year: "1960",
+        title: "SI Unit 'Tesla' Established",
+        category: "legacy",
+        patent: "INTERNATIONAL SI UNIT",
+        desc: "The General Conference on Weights and Measures officially names the SI unit of magnetic flux density the 'Tesla' (T)."
+      }
+    ];
+
+    function renderTimeline(items) {
+      const grid = document.getElementById('timeline-grid');
+      grid.innerHTML = '';
+      
+      if (items.length === 0) {
+        grid.innerHTML = `<p class="text-sm text-stone-500 italic col-span-2 text-center py-8">No matching patent ledger entries found.</p>`;
+        return;
+      }
+
+      items.forEach(item => {
+        const card = document.createElement('div');
+        card.className = "bg-white p-5 rounded-xl shadow-sm border-l-4 border-copper hover:shadow-md transition-shadow space-y-2";
+        card.innerHTML = `
+          <div class="flex justify-between items-center">
+            <span class="bg-copper/10 text-copper font-bold font-mono text-xs px-2.5 py-1 rounded border border-copper/20">${item.year}</span>
+            <span class="text-[10px] uppercase font-mono font-bold text-stone-400 tracking-wider">${item.patent}</span>
+          </div>
+          <h4 class="font-heading font-bold text-ink text-base">${item.title}</h4>
+          <p class="text-xs text-stone-600 leading-relaxed">${item.desc}</p>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    function filterTimeline(cat) {
+      document.querySelectorAll('.tl-filter-btn').forEach(btn => {
+        btn.classList.remove('bg-[#1c1d1f]', 'text-white');
+        btn.classList.add('bg-stone-100', 'text-stone-700');
+      });
+      event.target.classList.remove('bg-stone-100', 'text-stone-700');
+      event.target.classList.add('bg-[#1c1d1f]', 'text-white');
+
+      if (cat === 'all') {
+        renderTimeline(timelineData);
+      } else {
+        renderTimeline(timelineData.filter(i => i.category === cat));
+      }
+    }
+
+    function searchTimeline() {
+      const q = document.getElementById('tl-search').value.toLowerCase();
+      const filtered = timelineData.filter(i => 
+        i.title.toLowerCase().includes(q) || 
+        i.desc.toLowerCase().includes(q) || 
+        i.year.includes(q) ||
+        i.patent.toLowerCase().includes(q)
+      );
+      renderTimeline(filtered);
+    }
+
+    let chartPatentsInstance = null;
+    let chartMindsetInstance = null;
+
+    function initCharts() {
+      const ctx1 = document.getElementById('chart-patents');
+      if (ctx1 && !chartPatentsInstance) {
+        chartPatentsInstance = new Chart(ctx1, {
+          type: 'doughnut',
+          data: {
+            labels: [
+              'AC Motors & Power Grid',
+              'Transformers & High Voltage',
+              'High Frequency & Radio',
+              'Lighting & Arc Lamps',
+              'Turbines & Mechanical'
+            ],
+            datasets: [{
+              data: [36, 24, 20, 12, 8],
+              backgroundColor: ['#b45309', '#1c1d1f', '#1e40af', '#2563eb', '#78716c'],
+              borderWidth: 2,
+              borderColor: '#ffffff'
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                position: 'bottom',
+                labels: { font: { size: 10, family: 'Plus Jakarta Sans' } }
+              },
+              tooltip: {
+                callbacks: {
+                  label: function(context) {
+                    return ` ${context.label}: ${context.raw}% of Patents`;
+                  }
+                }
+              }
+            }
+          }
+        });
+      }
+
+      const ctx2 = document.getElementById('chart-mindset');
+      if (ctx2 && !chartMindsetInstance) {
+        chartMindsetInstance = new Chart(ctx2, {
+          type: 'radar',
+          data: {
+            labels: [
+              'Mental Visual Simulation',
+              'Electromagnetic Theory',
+              'Mechanical Precision',
+              'High Voltage Intuition',
+              'Cosmic & Future Vision'
+            ],
+            datasets: [{
+              label: 'Tesla Competency Profile',
+              data: [100, 95, 88, 98, 92],
+              backgroundColor: 'rgba(180, 83, 9, 0.25)',
+              borderColor: '#b45309',
+              pointBackgroundColor: '#1e40af',
+              pointBorderColor: '#fff',
+              borderWidth: 2
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false }
+            },
+            scales: {
+              r: {
+                angleLines: { color: 'rgba(0,0,0,0.1)' },
+                suggestedMin: 0,
+                suggestedMax: 100,
+                ticks: { display: false }
+              }
+            }
+          }
+        });
+      }
+    }
+
+    const quotesData = [
+      {
+        quote: "If you want to find the secrets of the universe, think in terms of energy, frequency and vibration.",
+        author: "Nikola Tesla",
+        source: "Interview (1942)",
+        cat: "energy"
+      },
+      {
+        quote: "The present is theirs; the future, for which I really worked, is mine.",
+        author: "Nikola Tesla",
+        source: "Reflecting on Marconi (1934)",
+        cat: "future"
+      },
+      {
+        quote: "My brain is only a receiver, in the Universe there is a core from which we obtain knowledge, strength and inspiration.",
+        author: "Nikola Tesla",
+        source: "Address to AIEE (1892)",
+        cat: "mind"
+      },
+      {
+        quote: "Let the future tell the truth, and evaluate each one according to his work and accomplishments.",
+        author: "Nikola Tesla",
+        source: "A Machine to End War (1900)",
+        cat: "future"
+      }
+    ];
+
+    function renderQuotes(items) {
+      const grid = document.getElementById('quotes-grid');
+      grid.innerHTML = '';
+      items.forEach(q => {
+        const card = document.createElement('div');
+        card.className = "bg-white p-6 rounded-xl shadow-sm border border-borderSepia flex flex-col justify-between space-y-4";
+        card.innerHTML = `
+          <p class="text-xs sm:text-sm text-stone-700 italic leading-relaxed font-heading">“${q.quote}”</p>
+          <div class="pt-2 border-t border-stone-100 flex justify-between items-center text-xs font-mono">
+            <span class="font-bold text-ink">${q.author}</span>
+            <span class="text-copper font-semibold">${q.source}</span>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    function filterQuotes(cat) {
+      document.querySelectorAll('.quote-filter-btn').forEach(btn => {
+        btn.classList.remove('bg-[#1c1d1f]', 'text-white');
+        btn.classList.add('bg-stone-100', 'text-stone-700');
+      });
+      event.target.classList.remove('bg-stone-100', 'text-stone-700');
+      event.target.classList.add('bg-[#1c1d1f]', 'text-white');
+
+      if (cat === 'all') {
+        renderQuotes(quotesData);
+      } else {
+        renderQuotes(quotesData.filter(q => q.cat === cat));
+      }
+    }
+
+    function getRandomQuote() {
+      const rand = quotesData[Math.floor(Math.random() * quotesData.length)];
+      document.getElementById('featured-quote-text').innerText = rand.quote;
+      document.getElementById('featured-quote-author').innerText = `— ${rand.author}, ${rand.source}`;
+    }
+
+    const quizQuestions = [
+      {
+        title: "War of the Currents",
+        question: "What primary invention did Tesla license to George Westinghouse to defeat Edison's DC grid?",
+        options: [
+          "Direct Current Dynamo",
+          "Polyphase Alternating Current (AC) Induction Motor & System",
+          "Incandescent Carbon Filament Lamp",
+          "Telegraphic Relay Receiver"
+        ],
+        correct: 1,
+        explanation: "Tesla's 1888 polyphase AC motor and transformer system allowed electricity to be stepped up to high voltage and transmitted safely over hundreds of miles."
+      },
+      {
+        title: "Hydroelectric Power",
+        question: "In 1895, what major natural feature was harnessed by Tesla and Westinghouse for the world's first large-scale AC station?",
+        options: [
+          "Victoria Falls",
+          "Niagara Falls",
+          "Grand Canyon / Colorado River",
+          "Yosemite Falls"
+        ],
+        correct: 1,
+        explanation: "The Niagara Falls power station sent high-voltage AC current to Buffalo, NY, setting the blueprint for modern electric municipal grids."
+      },
+      {
+        title: "High Voltage Wireless",
+        question: "In 1899, where did Tesla build a high-voltage experimental laboratory to study terrestrial energy and artificial lightning?",
+        options: [
+          "Colorado Springs, Colorado",
+          "Menlo Park, New Jersey",
+          "Smiljan, Croatia",
+          "London, England"
+        ],
+        correct: 0,
+        explanation: "At Colorado Springs, Tesla produced artificial lightning sparks exceeding 100 feet and proved that Earth could act as an electrical conductor."
+      },
+      {
+        title: "Invention of Radio",
+        question: "Which Supreme Court decision occurred shortly after Tesla's death in 1943?",
+        options: [
+          "Awarded Edison sole patent rights to electrical generation",
+          "Upholding Tesla's prior patents over Guglielmo Marconi for the invention of radio",
+          "Outlawed wireless energy transmission",
+          "Nationalized the Niagara power station"
+        ],
+        correct: 1,
+        explanation: "In June 1943, the US Supreme Court recognized Tesla's 1897 patents as having priority over Marconi's radio patent applications."
+      }
+    ];
+
+    let currentQuizIndex = 0;
+    let quizScore = 0;
+    let optionSelected = false;
+
+    function renderQuizQuestion() {
+      const q = quizQuestions[currentQuizIndex];
+      optionSelected = false;
+
+      document.getElementById('quiz-progress').innerText = `Question ${currentQuizIndex + 1} of ${quizQuestions.length}`;
+      document.getElementById('quiz-title').innerText = q.title;
+      document.getElementById('quiz-question-text').innerText = q.question;
+      document.getElementById('quiz-score-num').innerText = `${quizScore} / ${quizQuestions.length}`;
+      
+      const feedbackBox = document.getElementById('quiz-feedback-box');
+      feedbackBox.className = "hidden p-4 rounded text-xs leading-relaxed";
+
+      const optsContainer = document.getElementById('quiz-options-container');
+      optsContainer.innerHTML = '';
+
+      q.options.forEach((opt, idx) => {
+        const btn = document.createElement('button');
+        btn.className = "w-full text-left p-3 rounded border border-stone-200 hover:border-copper hover:bg-amber-500/5 text-xs sm:text-sm font-medium transition-all duration-200 flex items-center justify-between";
+        btn.innerHTML = `<span>${opt}</span> <span class="opt-icon text-stone-300">⚪</span>`;
+        btn.onclick = () => selectQuizOption(idx, btn);
+        optsContainer.appendChild(btn);
+      });
+
+      document.getElementById('quiz-next-btn').disabled = true;
+    }
+
+    function selectQuizOption(selectedIdx, btnEl) {
+      if (optionSelected) return;
+      optionSelected = true;
+
+      const q = quizQuestions[currentQuizIndex];
+      const opts = document.getElementById('quiz-options-container').children;
+      const feedbackBox = document.getElementById('quiz-feedback-box');
+
+      if (selectedIdx === q.correct) {
+        quizScore++;
+        btnEl.classList.add('bg-amber-50', 'border-copper', 'text-amber-950');
+        btnEl.querySelector('.opt-icon').innerText = '✅';
+        feedbackBox.className = "p-4 rounded text-xs leading-relaxed bg-amber-50 border border-copper/40 text-amber-950";
+        feedbackBox.innerHTML = `<strong>Correct!</strong> ${q.explanation}`;
+      } else {
+        btnEl.classList.add('bg-red-50', 'border-red-400', 'text-red-900');
+        btnEl.querySelector('.opt-icon').innerText = '❌';
+        opts[q.correct].classList.add('bg-amber-50', 'border-copper');
+        opts[q.correct].querySelector('.opt-icon').innerText = '💡';
+        feedbackBox.className = "p-4 rounded text-xs leading-relaxed bg-red-50 border border-red-300 text-red-900";
+        feedbackBox.innerHTML = `<strong>Incorrect.</strong> ${q.explanation}`;
+      }
+
+      feedbackBox.classList.remove('hidden');
+      document.getElementById('quiz-score-num').innerText = `${quizScore} / ${quizQuestions.length}`;
+      document.getElementById('quiz-next-btn').disabled = false;
+    }
+
+    function nextQuestion() {
+      if (currentQuizIndex < quizQuestions.length - 1) {
+        currentQuizIndex++;
+        renderQuizQuestion();
+      } else {
+        const container = document.getElementById('quiz-options-container');
+        container.innerHTML = `
+          <div class="text-center py-6 space-y-3 bg-parchmentDark rounded-xl border border-copper/40">
+            <span class="text-4xl">⚡</span>
+            <h5 class="font-heading text-xl font-bold text-ink">Exhibition Challenge Completed!</h5>
+            <p class="text-sm text-stone-700">Your Final Score: <strong class="text-copper text-base font-mono">${quizScore} out of ${quizQuestions.length}</strong></p>
+            <p class="text-xs text-stone-500 max-w-md mx-auto">
+              ${quizScore === quizQuestions.length ? 'Mastery Achieved! You possess an exceptional understanding of Nikola Tesla\'s electrical legacy.' : 'Great effort! Explore the AC Motor workshop and patent ledger sections to further deepen your knowledge.'}
+            </p>
+          </div>
+        `;
+        document.getElementById('quiz-feedback-box').classList.add('hidden');
+        document.getElementById('quiz-next-btn').classList.add('hidden');
+      }
+    }
+
+    function resetQuiz() {
+      currentQuizIndex = 0;
+      quizScore = 0;
+      document.getElementById('quiz-next-btn').classList.remove('hidden');
+      renderQuizQuestion();
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      renderSimStep();
+      renderTimeline(timelineData);
+      renderQuotes(quotesData);
+      renderQuizQuestion();
+    });
+  </script>
+</body>
+</html>
